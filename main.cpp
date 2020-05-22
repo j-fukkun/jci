@@ -29,17 +29,18 @@ struct Token{
   Token *next; /*次の入力トークン*/
   int val; /*kindがTK_NUMの場合、その数値*/
   char *str; /*トークン文字列*/
+  int len; //トークンの長さ
 };
 
 //input program
 char* user_input;
 
 /*current token*/
-Token *token;
+Token* token;
 
 /*エラーを報告するための関数*/
 /*prnitfと同じ引数を取る*/
-void error(char *fmt, ...) {
+void error(char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);
@@ -48,7 +49,7 @@ void error(char *fmt, ...) {
 }
 
 // Reports an error location and exit.
-void error_at(char *loc, char *fmt, ...) {
+void error_at(char* loc, char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
@@ -61,22 +62,29 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
-/*次のトークンが期待している記号のときには、トークンを一つ読み進めて*/
-/*真を返す。それ以外の場合は、偽を返す*/
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
-    return false;
+//次のトークンが期待している記号のときには、トークンを一つ読み進めて
+//真を返す。それ以外の場合は、偽を返す
+bool consume(/*const std::string op*/const char* op){
+  if(token->kind != TK_RESERVED
+     || /*op.size()*/strlen(op) != token->len
+     /*|| op.compare(token->str) != 0*/
+     || memcmp(token->str, op, token->len))
+    {
+      return false;
+    }
   token = token->next;
   return true;
-}
+} //consume()
 
 /*次のトークンが期待している記号のときには、トークンを一つ読み進める。*/
 /*それ以外の場合には、エラーを報告する*/
-void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op){
-    /*error("'%c'ではありません", op);*/
+void expect(/*const std::string op*/ const char* op) {
+  if (token->kind != TK_RESERVED
+      || /*op.size()*/strlen(op) != token->len
+      /*|| op.compare(token->str) != 0*/
+      || memcmp(token->str, op, token->len)){
     char msg[] = "expected '%c'";
-    error_at(token->str, msg, op);
+    error_at(token->str, msg, op/*.c_str()*/);
   }
   token = token->next;
 }
@@ -99,12 +107,17 @@ bool at_eof() {
 }
 
 /*新しいトークンを作成してcurにつなげる*/
-Token* new_token(TokenKind kind, Token *cur, char *str) {
+Token* new_token(TokenKind kind, Token* cur, char* str, int len) {
   Token* tok = (Token*)calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len  = len;
   cur->next = tok;
   return tok;
+}
+
+bool startswith(char* p, const char* q){
+  return (memcmp(p, q, strlen(q)) == 0);
 }
 
 /*入力文字列pをトークナイズしてそれを返す*/
@@ -121,14 +134,31 @@ Token* tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()", *p)) {
-      cur = new_token(TK_RESERVED, cur, p++);
+    //複数文字を区切る
+    //multi-letter
+    if(startswith(p, std::string("==").c_str())
+       || startswith(p, std::string("!=").c_str())
+       || startswith(p, std::string("<=").c_str())
+       || startswith(p, std::string(">=").c_str())){
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
       continue;
-    }
+    } //if multi-letter
 
+    //１つの文字を区切る
+    //single-letter
+    if (strchr("+-*/()<>", *p)) {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
+      //printf("single-letter\n");
+      continue;
+    } //if single-letter
+
+    //integer
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p, 0);
+      char* q = p;
       cur->val = strtol(p, &p, 10);
+      cur->len = p - q;
       continue;
     }
 
@@ -137,7 +167,7 @@ Token* tokenize() {
     error_at(p, msg);
   } //while()
 
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 0);
   return head.next;
 }
 
@@ -152,6 +182,10 @@ enum NodeKind{
   ND_MUL, // *
   ND_DIV, // /
   ND_NUM, // Integer
+  ND_EQ, //==
+  ND_NE, //!=
+  ND_LT, //<
+  ND_LE, //<=
 };
 
 // AST node type
@@ -182,43 +216,104 @@ Node* new_num(int val) {
   return node;
 }
 
-Node *expr();
-Node *mul();
-Node *primary();
+Node* expr();
+Node* equality();
+Node* relational();
+Node* add();
+Node* mul();
+Node* unary();
+Node* primary();
 
-// expr = mul ("+" mul | "-" mul)*
-Node *expr() {
-  Node *node = mul();
+// expr = equality
+Node* expr() {
+  return equality(); 
+}
 
-  for (;;) {
-    if (consume('+'))
+//equality = relatinal ("==" relational | "!=" relational)*
+Node* equality(){
+  Node* node = relational();
+
+  for(;;){
+    if(consume(std::string("==").c_str())){
+      node = new_binary(ND_EQ, node, relational());
+    } else if(consume(std::string("!=").c_str())){
+      node = new_binary(ND_NE, node, relational());
+    } else {
+      return node;
+    } //if
+  } //for
+} //equality()
+
+//relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+Node* relational(){
+  Node* node = add();
+
+  for(;;){
+    if(consume(std::string("<").c_str())){
+      node = new_binary(ND_LT, node, add());
+    } else if(consume(std::string("<=").c_str())){
+      node = new_binary(ND_LE, node, add());
+    } else if(consume(std::string(">").c_str())){
+      node = new_binary(ND_LT, add(), node);
+    } else if(consume(std::string(">=").c_str())){
+      node = new_binary(ND_LE, add(), node);
+    } else {
+      return node;
+    }
+  } //for
+  
+} //relational()
+
+//add = mul ("+" mul | "-" mul)*
+Node* add(){
+  Node* node = mul();
+
+  for(;;){
+    if(consume(std::string("+").c_str())){
       node = new_binary(ND_ADD, node, mul());
-    else if (consume('-'))
+    } else if(consume(std::string("-").c_str())){
       node = new_binary(ND_SUB, node, mul());
-    else
+    } else {
       return node;
-  }
-}
+    } //if
+  } //for
+  
+} //add()
 
-// mul = primary ("*" primary | "/" primary)*
-Node *mul() {
-  Node *node = primary();
+
+// mul = unary ("*" unary | "/" unary)*
+Node* mul() {
+  Node* node = unary();
 
   for (;;) {
-    if (consume('*'))
-      node = new_binary(ND_MUL, node, primary());
-    else if (consume('/'))
-      node = new_binary(ND_DIV, node, primary());
+    if (consume(std::string("*").c_str()))
+      node = new_binary(ND_MUL, node, unary());
+    else if (consume(std::string("/").c_str()))
+      node = new_binary(ND_DIV, node, unary());
     else
       return node;
   }
-}
+} //mul()
+
+//unary = ("+" | "-")? unary
+//        | primary
+Node* unary(){
+  if(consume(std::string("+").c_str())){
+    //printf("unary() +\n");
+    return unary();
+  }
+  if(consume(std::string("-").c_str())){
+    return new_binary(ND_SUB, new_num(0), unary());
+  }
+  return primary();
+
+} //urary()
 
 // primary = "(" expr ")" | num
 Node *primary() {
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(std::string(")").c_str());
     return node;
   }
 
@@ -236,6 +331,10 @@ enum IRKind{
   IR_DIV, // /
   IR_IMM, // immediate value
   IR_MOV, // mov
+  IR_EQ, //==
+  IR_NE, //!=
+  IR_LT, //<
+  IR_LE, //<=
 };
 
 struct Reg{
@@ -312,6 +411,14 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_MUL, node);
   case ND_DIV:
     return gen_binop_IR(IR_DIV, node);
+  case ND_EQ:
+    return gen_binop_IR(IR_EQ, node);
+  case ND_NE:
+    return gen_binop_IR(IR_NE, node);
+  case ND_LT:
+    return gen_binop_IR(IR_LT, node);
+  case ND_LE:
+    return gen_binop_IR(IR_LE, node);
   } //switch
 }
 
@@ -398,12 +505,27 @@ const bool allocateRegister(){
 //
 // code generator
 //
-std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
+const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
+const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
 
-void gen(IR* ir) {
-  int d = ir->d ? ir->d->rn : 0;
-  int a = ir->a ? ir->a->rn : 0;
-  int b = ir->b ? ir->b->rn : 0;
+
+void print_cmp(const std::string inst, const IR* ir){
+  //EQ,NE,LT,LEの命令を出力
+  const int d = ir->d->rn;
+  const int a = ir->a->rn;
+  const int b = ir->b->rn;
+
+  printf("  cmp %s, %s\n", regs[a].c_str(), regs[b].c_str()); //compare フラグレジスタに結果が格納される
+  printf("  %s %s\n", inst.c_str(), regs8[d].c_str()); //フラグレジスタに格納された結果を8ビットレジスタに格納
+  printf("  movzb %s, %s\n", regs[d].c_str(), regs8[d].c_str()); //64bitレジスタの上位56bitをゼロクリア
+  
+} //print_cmp()
+
+
+void gen(const IR* ir) {
+  const int d = ir->d ? ir->d->rn : 0;
+  const int a = ir->a ? ir->a->rn : 0;
+  const int b = ir->b ? ir->b->rn : 0;
 
   switch(ir->opcode){
   case IR_IMM:
@@ -429,8 +551,20 @@ void gen(IR* ir) {
     printf("  idiv %s\n", regs[b].c_str());
     printf("  mov %s, rax\n", regs[d].c_str());
     break;
+  case IR_EQ:
+    print_cmp(std::string("sete"), ir);
+    break;
+  case IR_NE:
+    print_cmp(std::string("setne"), ir);
+    break;
+  case IR_LT:
+    print_cmp(std::string("setl"), ir);
+    break;
+  case IR_LE:
+    print_cmp(std::string("setle"), ir);
+    break;
   } //switch 
-}
+} //gen()
 
 //
 //IR dump
@@ -439,25 +573,30 @@ void IR_dump(){
 
   for(auto iter = IR_list.begin(), end = IR_list.end(); iter != end; ++iter){
     IR* ir = *iter;
-    const int d = ir->d->vn;
-    const int a = ir->a->vn;
-    const int b = ir->b->vn;
+    //const int d = ir->d->vn;
+    //const int a = ir->a->vn;
+    //const int b = ir->b->vn;
     
     switch(ir->opcode){
     case IR_MOV:
-      printf("v%d = v%d\n", d, b);
+      //printf("v%d = v%d\n", d, b);
+      printf("MOV\n");
       break;
     case IR_ADD:
-      printf("v%d = v%d + v%d", d, a, b);
+      //printf("v%d = v%d + v%d", d, a, b);
+      printf("ADD\n");
       break;
     case IR_SUB:
-      printf("v%d = v%d - v%d", d, a, b);
+      //printf("v%d = v%d - v%d", d, a, b);
+      printf("SUB\n");
       break;
     case IR_MUL:
-      printf("v%d = v%d * v%d", d, a, b);
+      //printf("v%d = v%d * v%d", d, a, b);
+      printf("MUL\n");
       break;
     case IR_DIV:
-      printf("v%d = v%d / v%d", d, a, b);
+      //printf("v%d = v%d / v%d", d, a, b);
+      printf("DIV\n");
       break;
     default:
       break;
@@ -465,6 +604,56 @@ void IR_dump(){
   } //for
   
 } //IR_dump()
+
+void ND_dump(Node* node){
+
+  switch(node->kind){
+  case ND_ADD:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_ADD\n");
+    break;
+  case ND_SUB:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_SUB\n");
+    break;
+  case ND_MUL:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_MUL\n");
+    break;
+  case ND_DIV:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_DIV\n");
+    break;
+  case ND_NUM:
+    printf("ND_NUM %d\n", node->val);
+    break;
+  case ND_EQ:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_EQ\n");
+    break;
+  case ND_NE:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_NE\n");
+    break;
+  case ND_LT:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_LT\n");
+    break;
+  case ND_LE:
+    ND_dump(node->lhs);
+    ND_dump(node->rhs);
+    printf("ND_LE\n");
+    break;
+  }
+  
+} //ND_dump
 
 
 int main(int argc, char **argv){
@@ -479,6 +668,8 @@ int main(int argc, char **argv){
   token = tokenize();
   Node* node = expr();
 
+  //ND_dump(node);
+
   /*アセンブリの前半部分を出力*/
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -489,11 +680,10 @@ int main(int argc, char **argv){
   //IR_dump();
   
   convertThreeToTwo();
-
-  //IR_dump();
   
   const bool allocated = allocateRegister();
   assert(allocated);
+  //IR_dump();
   
   for(auto iter = IR_list.begin(), end = IR_list.end(); iter != end; ++iter){
     gen(*iter);

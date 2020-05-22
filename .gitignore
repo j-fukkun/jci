@@ -1,5 +1,5 @@
 *~
 *.o
-tmp*
+*tmp*
 a.out
 jcc

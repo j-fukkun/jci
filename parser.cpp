@@ -1,5 +1,17 @@
 #include "jcc.h"
 
+std::list<LVar*> locals;
+
+LVar* find_lvar(Token* tok){
+  //LVar* var = locals;
+  for(auto iter = locals.begin(), end = locals.end(); iter != end; ++iter){
+    LVar* var = *iter;
+    if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)){
+      return var;
+    } //if
+  } //for
+  return NULL;
+} //find_lvar()
 
 Node* new_node(const NodeKind kind){
   Node* node = (Node*)calloc(1, sizeof(Node));
@@ -20,10 +32,44 @@ Node* new_num(const int val){
   return node;
 }
 
-// expr = equality
-Node* expr(){
-  return equality(); 
+// program = stmt*
+void program(){
+  int i = 0;
+  while(!at_eof()){
+    ir_code[i++] = stmt();
+  }
+  ir_code[i] = NULL;
+} //program()
+
+//stmt = expr ";" | "return" expr ";"
+Node* stmt(){
+  Node* node;
+
+  if(consume("return")){
+    node = (Node*)calloc(1, sizeof(node));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  } //if
+  
+  expect(std::string(";").c_str());
+  return node;
+} //stmt()
+
+// expr = assign
+Node *expr(){
+  return assign();
 } //expr()
+
+//assign = equality ("=" assign)?
+Node* assign(){
+  Node* node = equality();
+  if(consume(std::string("=").c_str())){
+    node = new_binary(ND_ASSIGN, node, assign());
+  } //if
+  return node;
+} //assign()
 
 //equality = relatinal ("==" relational | "!=" relational)*
 Node* equality(){
@@ -105,13 +151,41 @@ Node* unary(){
 
 } //urary()
 
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | num | ident
 Node* primary() {
-  if (consume("(")) {
+  if(consume(std::string("(").c_str())) {
     Node *node = expr();
     expect(std::string(")").c_str());
     return node;
-  }
+  } //if consume("(")
+
+  Token* tok = consume_ident();
+  if(tok){
+    Node* node = (Node*)calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+
+    LVar* lvar = find_lvar(tok);
+    if(lvar){
+      node->lvar = lvar;
+      node->offset = lvar->offset;
+    } else {
+      lvar = (LVar*)calloc(1, sizeof(LVar));
+      //lvar->next = locals;
+      locals.push_back(lvar);
+      lvar->name = tok->str;
+      lvar->len = tok->len;
+      
+      if(!locals.empty()){
+	lvar->offset = locals.front()->offset + 8;
+      } else {
+	lvar->offset = 8;
+      } //if
+      node->offset = lvar->offset;
+      node->lvar = lvar;
+      //locals = lvar;
+    } //if
+    return node;
+} //if tok
 
   return new_num(expect_number());
 } //primary()

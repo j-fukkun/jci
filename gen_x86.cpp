@@ -57,6 +57,22 @@ void gen(const IR* ir){
   case IR_LE:
     print_cmp(std::string("setle"), ir);
     break;
+  case IR_LVAR:
+    printf("  lea %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
+    break;
+  case IR_RETURN:
+    printf("  mov rax, %s\n", regs[a].c_str());
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    //printf("  jmp %s\n", ret);
+    break;
+  case IR_LOAD:
+    printf("  mov %s, [%s]\n", regs[d].c_str(), regs[b].c_str());
+    break;
+  case IR_STORE:
+    printf("  mov [%s], %s\n", regs[a].c_str(), regs[b].c_str());
+    break;
   } //switch 
 } //gen()
 

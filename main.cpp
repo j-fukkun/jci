@@ -2,6 +2,7 @@
 
 char* user_input;
 Token* token;
+Node* ir_code[100];
 std::list<IR*> IR_list;
 
 //
@@ -36,6 +37,8 @@ void IR_dump(){
       //printf("v%d = v%d / v%d", d, a, b);
       printf("DIV\n");
       break;
+    case IR_RETURN:
+      printf("RETURN\n");
     default:
       break;
     } //switch
@@ -104,7 +107,9 @@ int main(int argc, char **argv){
   /*tokenize*/
   user_input = argv[1];
   token = tokenize();
-  Node* node = expr();
+  //Node* node = expr();
+  program();
+  
 
   //ND_dump(node);
 
@@ -113,7 +118,17 @@ int main(int argc, char **argv){
   printf(".global main\n");
   printf("main:\n");
 
-  Reg* reg = gen_expr_IR(node);
+  //プロローグ
+  //変数26個文の領域を確保する
+  printf("  push rbp\n");;
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
+
+  int i = 0;
+  for(i = 0; ir_code[i]; i++){
+    gen_expr_IR(ir_code[i]);
+  }
+  
 
   //IR_dump();
   
@@ -126,14 +141,14 @@ int main(int argc, char **argv){
   for(auto iter = IR_list.begin(), end = IR_list.end(); iter != end; ++iter){
     gen(*iter);
   }
-
-  auto temp = IR_list.end();
-  temp--;
-  int d = (*temp)->d->rn;
-  gen_last(d);
   
-  //printf("  pop rax\n");
+  //エピローグ
+  //最後の式の結果がRAXに残っているので、それが返り値になる
+  /*
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
   printf("  ret\n");
+  */
   return 0;
 
 } /*main*/

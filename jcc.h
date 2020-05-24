@@ -12,8 +12,6 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
-//#include <iostream>
-
 
 //
 //Tokenizer
@@ -23,6 +21,7 @@
 enum TokenKind{
   TK_RESERVED, /*記号*/
   TK_NUM, /*整数*/
+  TK_IDENT, //識別子
   TK_EOF, /*入力の終わりを表すトークン*/
 };
 
@@ -45,10 +44,16 @@ extern Token* token;
 void error(char* fmt, ...);
 void error_at(char* loc, char* fmt, ...);
 bool consume(const char* op);
+Token* consume_ident();
 void expect(const char* op);
 const int expect_number();
+char* expect_ident();
 const bool at_eof();
+Token* new_token(TokenKind kind, Token* cur, char* str, int len);
+const bool is_alphabet(char c);
+const bool is_alphabet_or_number(char c);
 const bool startswith(char* p, const char* q);
+const char* startswith_reserved(char* p);
 Token* tokenize();
 
 
@@ -66,22 +71,43 @@ enum NodeKind{
   ND_NE, //!=
   ND_LT, //<
   ND_LE, //<=
+  ND_ASSIGN, //assignment
+  ND_LVAR, //local variant
+  ND_RETURN, //return
+};
+
+//type for local variable
+struct LVar{
+  LVar* next; //次の変数 or NULL
+  char* name; //変数の名前
+  int len; //変数名の長さ
+  int offset; //RBPからのオフセット
 };
 
 // AST node type
 //typedef struct Node Node;
-struct Node {
+struct Node{
   NodeKind kind; // Node kind
   Node* lhs;     // Left-hand side
   Node* rhs;     // Right-hand side
   int val;       // Used if kind == ND_NUM
+  int offset;    // Used if kind == ND_LVAR
+
+  LVar* lvar;
 };
 
 
+extern std::list<LVar*> locals;
+
+LVar* find_lvar(Token* tok);
 Node* new_node(const NodeKind kind);
 Node* new_binary(const NodeKind kind, Node* lhs, Node* rhs);
 Node* new_num(const int val);
+
+void program();
+Node* stmt();
 Node* expr();
+Node* assign();
 Node* equality();
 Node* relational();
 Node* add();
@@ -89,10 +115,13 @@ Node* mul();
 Node* unary();
 Node* primary();
 
+extern Node* ir_code[100];
 
 //
 //IR generator
 //
+
+
 
 enum IRKind{
   IR_ADD, // +
@@ -105,6 +134,10 @@ enum IRKind{
   IR_NE, //!=
   IR_LT, //<
   IR_LE, //<=
+  IR_LVAR, //local var
+  IR_STORE, //store
+  IR_LOAD,  //load
+  IR_RETURN, //return
 };
 
 struct Reg{
@@ -123,6 +156,7 @@ struct IR{
   Reg* b; //source operand right 
 
   int imm; //immediate value
+  LVar* lvar;
 };
 
 extern std::list<IR*> IR_list;

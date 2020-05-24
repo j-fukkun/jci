@@ -31,6 +31,21 @@ IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b){
   return ir;
 } //emit_IR()
 
+void load(Node* node, Reg* dst, Reg* src) {
+  IR *ir = emit_IR(IR_LOAD, dst, NULL, src);
+  //ir->size = node->ty->size;
+} //load()
+
+Reg* gen_lval_IR(Node* node){
+
+  assert(node->kind == ND_LVAR);
+  IR* ir;
+  ir = new_ir(IR_LVAR);
+  ir->d = new_reg();
+  ir->lvar = node->lvar;
+  return ir->d;
+} //gen_lval_IR()
+
 Reg* gen_binop_IR(const IRKind op, Node* node){
   Reg* d = new_reg();
   Reg* a = gen_expr_IR(node->lhs);
@@ -60,6 +75,25 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_LT, node);
   case ND_LE:
     return gen_binop_IR(IR_LE, node);
+  case ND_LVAR: {
+    Reg* r = new_reg();
+    load(node, r, gen_lval_IR(node));
+    return r;
+  } //ND_LVAR
+  case ND_ASSIGN: {
+    Reg* d = gen_lval_IR(node->lhs);
+    Reg* a = gen_expr_IR(node->rhs);
+    IR* ir = emit_IR(IR_STORE, NULL, d, a);
+    //ir->size = node->ty->size;
+    return a;
+  } //ND_ASSIGN
+  case ND_RETURN: {
+    Reg* r = gen_expr_IR(node->lhs);
+    IR* ir = new_ir(IR_RETURN);
+    ir->a = r;
+    return r;
+  } //ND_RETURN
+    
   } //switch
 } //gen_expr_IR
 

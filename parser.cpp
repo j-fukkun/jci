@@ -1,6 +1,7 @@
 #include "jcc.h"
 
 std::list<LVar*> locals;
+int nlabel = 1;
 
 LVar* find_lvar(Token* tok){
   //LVar* var = locals;
@@ -41,20 +42,81 @@ void program(){
   ir_code[i] = NULL;
 } //program()
 
-//stmt = expr ";" | "return" expr ";"
+//stmt = expr ";"
+//      | "return" expr? ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 Node* stmt(){
   Node* node;
 
   if(consume("return")){
-    node = (Node*)calloc(1, sizeof(node));
-    node->kind = ND_RETURN;
+    if(consume(";")){
+      //"return" ";"
+      node = new_node(ND_RETURN);
+    } //if
+    // "return" expr ";"
+    node = new_node(ND_RETURN);
     node->lhs = expr();
-  } else {
-    node = expr();
-  } //if
-  
-  expect(std::string(";").c_str());
+    expect(";");
+    return node;
+  } //if return
+
+  if(consume("if")){
+    //"if" "(" expr ")" stmt ("else" stmt)?
+    node = new_node(ND_IF);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    if(consume("else")){
+      node->els = stmt();
+    }
+    return node; 
+  } //if if
+
+  if(consume("while")){
+    //"while" "(" expr ")" stmt
+    node = new_node(ND_WHILE);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  } //if "while"
+
+  if(consume("for")){
+    //"for" "(" expr? ";" expr? ";" expr? ")" stmt
+    node = new_node(ND_FOR);
+    expect("(");
+    //1個目
+    if(!consume(";")){
+      //先読みして、";"ではなかったとき
+      node->init = expr();
+      expect(";");
+    } //if(!consume(";"))
+
+    //2個目
+    if(!consume(";")){
+      node->cond = expr();
+      expect(";");
+    } //if(!consume(";"))
+
+    //3個目
+    if(!consume(")")){
+      node->inc = expr();
+      expect(")");
+    } //if(!consume(")"))
+    node->then = stmt();
+    return node;
+  } //if "for"
+
+  //expr ";"
+  node = expr();
+  expect(";");
   return node;
+  
+  
 } //stmt()
 
 // expr = assign

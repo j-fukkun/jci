@@ -74,6 +74,10 @@ enum NodeKind{
   ND_ASSIGN, //assignment
   ND_LVAR, //local variant
   ND_RETURN, //return
+  ND_IF, //if
+  ND_WHILE, //while
+  ND_FOR, //for
+  ND_NULL,
 };
 
 //type for local variable
@@ -94,10 +98,18 @@ struct Node{
   int offset;    // Used if kind == ND_LVAR
 
   LVar* lvar;
+
+  //"if","while","for"
+  Node* cond;
+  Node* then;
+  Node* els;
+  Node* init; //for
+  Node* inc; //for
 };
 
 
 extern std::list<LVar*> locals;
+extern int nlabel;
 
 LVar* find_lvar(Token* tok);
 Node* new_node(const NodeKind kind);
@@ -136,8 +148,12 @@ enum IRKind{
   IR_LE, //<=
   IR_LVAR, //local var
   IR_STORE, //store
+  IR_STORE_SPILL,
   IR_LOAD,  //load
+  IR_LOAD_SPILL,
   IR_RETURN, //return
+  IR_BR, //branch
+  IR_JMP, //jump
 };
 
 struct Reg{
@@ -146,7 +162,20 @@ struct Reg{
   int rn; //real register number
 
   //for register allocater
-  bool def;
+  int def;
+  int last_use;
+  bool spill;
+  LVar* lvar;
+};
+
+struct IR;
+struct BasicBlock{
+  int label;
+  std::list<IR*> instructions;
+
+  // For liveness analysis
+  std::list<BasicBlock*> succ;
+  std::list<BasicBlock*> pred;
 };
 
 struct IR{
@@ -157,9 +186,14 @@ struct IR{
 
   int imm; //immediate value
   LVar* lvar;
+
+  BasicBlock* bb1;
+  BasicBlock* bb2;
+  //Reg* bbarg;
 };
 
 extern std::list<IR*> IR_list;
+extern std::list<BasicBlock*> BB_list;
 
 IR* new_ir(const IRKind opcode);
 Reg* new_reg();
@@ -167,15 +201,17 @@ Reg* new_imm(const int imm);
 IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b);
 Reg* gen_binop_IR(const IRKind op, Node* node);
 Reg* gen_expr_IR(Node* node);
+void gen_IR();
 
 
 //
 //register allocator
 //
 
-void convertThreeToTwo();
-const std::vector<Reg*> collect_reg();
-const bool allocateRegister();
+//void convertThreeToTwo();
+//const std::vector<Reg*> collect_reg();
+//const bool allocateRegister();
+void allocateRegister();
 
 
 //

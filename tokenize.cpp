@@ -40,7 +40,7 @@ bool consume(const char* op){
 
 Token* consume_ident(){
   if(token->kind != TK_IDENT){
-    return false;
+    return nullptr;
   } //if
   Token* t = token;
   token = token->next;

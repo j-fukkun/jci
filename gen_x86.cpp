@@ -70,8 +70,27 @@ void gen(const IR* ir){
   case IR_LOAD:
     printf("  mov %s, [%s]\n", regs[d].c_str(), regs[b].c_str());
     break;
+  case IR_LOAD_SPILL:
+    printf("  mov %s, [rbp-%d]", regs[d].c_str(), ir->lvar->offset);
+    break;
   case IR_STORE:
     printf("  mov [%s], %s\n", regs[a].c_str(), regs[b].c_str());
+    break;
+  case IR_STORE_SPILL:
+    printf("  mov [rbp-%d], %s", ir->lvar->offset, regs[a].c_str());
+    break;
+  case IR_BR:
+    printf("  cmp %s, 0\n", regs[b].c_str());
+    printf("  jne .L%d\n", ir->bb1->label);
+    printf("  jmp .L%d\n", ir->bb2->label);
+    break;
+  case IR_JMP:
+    /*
+    if (ir->bbarg){
+      printf("  mov %s, %s", regs[ir->bb1->param->rn], regs[ir->bbarg->rn]);
+    } //if
+    */
+    printf("  jmp .L%d\n", ir->bb1->label);
     break;
   } //switch 
 } //gen()

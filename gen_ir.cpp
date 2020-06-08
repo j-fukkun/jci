@@ -1,13 +1,24 @@
 #include "jcc.h"
 
+static int nreg = 1;
+static BasicBlock* out;
+
+BasicBlock* new_bb(){
+  //BasicBlock* bb = (BasicBlock*)calloc(1, sizeof(BasicBlock));
+  BasicBlock* bb = new BasicBlock();
+  bb->label = nlabel++;
+  BB_list.push_back(bb);
+  return bb;  
+} //new_bb()
+
 IR* new_ir(const IRKind opcode){
   IR* ir = (IR*)calloc(1, sizeof(IR));
   ir->opcode = opcode;
-  IR_list.push_back(ir);
+  //IR_list.push_back(ir);
+  out->instructions.push_back(ir);
   return ir;
 } //new_ir()
 
-static int nreg = 1;
 Reg* new_reg(){
   Reg* reg = (Reg*)calloc(1, sizeof(Reg));
   reg->vn = nreg++;
@@ -30,6 +41,27 @@ IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b){
   ir->b = b;
   return ir;
 } //emit_IR()
+
+IR* br(Reg* r, BasicBlock* then, BasicBlock* els) {
+  IR* ir = new_ir(IR_BR);
+  ir->b = r;
+  ir->bb1 = then;
+  ir->bb2 = els;
+  return ir;
+} //br()
+
+IR* jmp(BasicBlock* bb){
+  IR* ir = new_ir(IR_JMP);
+  ir->bb1 = bb;
+  return ir;
+} //jmp()
+
+IR* jmp_arg(BasicBlock* bb, Reg* r) {
+  IR* ir = new_ir(IR_JMP);
+  ir->bb1 = bb;
+  //ir->bbarg = r;
+  return ir;
+} //jmp_arg()
 
 void load(Node* node, Reg* dst, Reg* src) {
   IR *ir = emit_IR(IR_LOAD, dst, NULL, src);
@@ -91,9 +123,93 @@ Reg* gen_expr_IR(Node* node){
     Reg* r = gen_expr_IR(node->lhs);
     IR* ir = new_ir(IR_RETURN);
     ir->a = r;
-    return r;
+    out = new_bb();
+    return nullptr;
   } //ND_RETURN
+  case ND_IF: {
+    BasicBlock* then = new_bb();
+    BasicBlock* els = new_bb();
+    BasicBlock* last = new_bb();
+
+    br(gen_expr_IR(node->cond), then, els);
+
+    out = then;
+    gen_expr_IR(node->then); //gen_stmt
+    jmp(last);
+
+    out = els;
+    if(node->els){
+      gen_expr_IR(node->els); //gen_stmt
+    } //if
+    jmp(last);
+
+    out = last;
+    return nullptr;    
+  } //ND_IF
+  case ND_FOR: {
+    BasicBlock* cond = new_bb();
+    BasicBlock* body = new_bb();
+    //node->continue_ = new_bb();
+    //node->break_ = new_bb();
+    BasicBlock* _break = new_bb();
+
+    if(node->init){
+      gen_expr_IR(node->init); //gen_stmt
+    } //if
+    jmp(cond);
+
+    out = cond;
+    if(node->cond){
+      Reg* r = gen_expr_IR(node->cond);
+      br(r, body, /*node->break_*/_break);
+    } else {
+      jmp(body);
+    } //if
+
+    out = body;
+    gen_expr_IR(node->then); //gen_stmt
+
+    if(node->inc){
+      gen_expr_IR(node->inc);
+    } //if
+    jmp(cond);
+
+    out = _break;
+    return nullptr;
+  } //ND_FOR
+  case ND_WHILE: {
+    BasicBlock* cond = new_bb();
+    BasicBlock* body = new_bb();
+    BasicBlock* _break = new_bb();
+
+    out = cond;
+    Reg* r = gen_expr_IR(node->cond);
+    br(r, body, _break);
+
+    out = body;
+    gen_expr_IR(node->then); //gen_stmt
+    jmp(cond);
+
+    out = _break;
+    return nullptr;
+  } //ND_WHILE
+    
     
   } //switch
 } //gen_expr_IR
+
+void gen_IR(){
+
+  // Add an empty entry BB to make later analysis easy.
+  out = new_bb();
+  //BasicBlock* bb = new_bb();
+  //jmp(bb);
+  //out = bb;
+  
+  int i = 0;
+  for(i = 0; ir_code[i]; i++){
+    gen_expr_IR(ir_code[i]);
+  } //for
+  
+} //gen_IR()
 

@@ -43,6 +43,7 @@ void program(){
 } //program()
 
 //stmt = expr ";"
+//      | "{" stmt* "}"
 //      | "return" expr? ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
@@ -110,6 +111,21 @@ Node* stmt(){
     node->then = stmt();
     return node;
   } //if "for"
+
+  if(consume("{")){
+    //"{" stmt* "}"
+    Node head = {};
+    Node* curr = &head;
+
+    while(!consume("}")){
+      curr->next = stmt();
+      curr = curr->next;
+    } //while
+
+    node = new_node(ND_BLOCK);
+    node->body = head.next;
+    return node;    
+  } //if(consume("{"))
 
   //expr ";"
   node = expr();

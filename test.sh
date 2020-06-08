@@ -41,5 +41,7 @@ try 10 'a = 3+7; return a;'
 try 10 'a = 10; hoge = a; return b;'
 try 10 'a = 0; b = 0; for(;a < 10; a = a + 1) b = b + 1; return b;'
 try 20 'b = 0; while(b < 20) b = b + 1; return b;'
+try 10 'a = 0; b = 5; if(b < 10) a = 10; else a = 5; return a;'
 try 5 'a = 0; b = 5; if(b > 10) a = 10; else a = 5; return a;'
+try 20 'a = 0; b = 5; c = 0; if(b < 10){ a = 10; c = 20;} else {a = 5; c = 30;} return c;'
 echo OK

@@ -193,7 +193,14 @@ Reg* gen_expr_IR(Node* node){
     out = _break;
     return nullptr;
   } //ND_WHILE
-    
+  case ND_BLOCK: {
+    Node* n = node->body;
+    while(n){
+      gen_expr_IR(n);
+      n = n->next;
+    } //while
+    return nullptr;
+  } //ND_BLOCK    
     
   } //switch
 } //gen_expr_IR

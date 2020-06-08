@@ -77,6 +77,7 @@ enum NodeKind{
   ND_IF, //if
   ND_WHILE, //while
   ND_FOR, //for
+  ND_BLOCK, //{}
   ND_NULL,
 };
 
@@ -105,6 +106,10 @@ struct Node{
   Node* els;
   Node* init; //for
   Node* inc; //for
+
+  //block
+  Node* body;
+  Node* next;
 };
 
 

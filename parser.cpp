@@ -229,7 +229,9 @@ Node* unary(){
 
 } //urary()
 
-// primary = "(" expr ")" | num | ident
+// primary = "(" expr ")"
+//           | num
+//           | ident ("(" ")")?
 Node* primary() {
   if(consume(std::string("(").c_str())) {
     Node *node = expr();
@@ -239,6 +241,16 @@ Node* primary() {
 
   Token* tok = consume_ident();
   if(tok){
+    if(consume("(")){
+      //function call
+      Node* node = new_node(ND_FUNCALL);
+      node->funcname = strndup(tok->str, tok->len); //文字列複製
+      //node->args = func_args();
+      expect(")");
+      return node;
+    } //if(consume("("))
+
+    //variable
     Node* node = (Node*)calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
 

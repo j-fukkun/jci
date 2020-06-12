@@ -2,6 +2,7 @@
 
 static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
 static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
+static unsigned int labelseq = 1;
 
 void print_cmp(const std::string inst, const IR* ir){
   //EQ,NE,LT,LEの命令を出力
@@ -91,6 +92,39 @@ void gen(const IR* ir){
     } //if
     */
     printf("  jmp .L%d\n", ir->bb1->label);
+    break;
+  case IR_FUNCALL:
+    /*
+    int seq = labelseq++;
+    printf("  mov rax, rsp\n");
+    printf("  and rax, 15\n"); //15(1111)とand演算
+    //16は(0001 0000)なので、15とand演算すると、0になる
+    //演算結果が0のとき、ZFには1がセットされる
+    printf("  jnz .L.call.%d\n", seq); //ZF(Zero Flag) = 0のときにjump
+    printf("  push r10\n");
+    printf("  push r11\n");
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", ir->funcname);
+    printf("  jmp .L.end.%d\n", seq);
+    printf(".L.call.%d:\n", seq); //RSPが16の倍数ではないとき
+    printf("  sub rsp, 8\n");
+    printf("  push r10\n");
+    printf("  push r11\n");
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", ir->funcname);
+    printf("  add rsp, 8\n");
+    printf(".L.end.%d:\n", seq);
+    printf("  pop r11\n");
+    printf("  pop r10\n");
+    printf("  mov %s, rax\n", regs[d].c_str());
+    */
+    printf("  push r10\n");
+    printf("  push r11\n");
+    printf("  mov rax, 0\n");
+    printf("  call %s\n", ir->funcname);
+    printf("  pop r11\n");
+    printf("  pop r10\n");
+    printf("  mov %s, rax\n", regs[d].c_str());
     break;
   } //switch 
 } //gen()

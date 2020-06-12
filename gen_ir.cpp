@@ -200,7 +200,16 @@ Reg* gen_expr_IR(Node* node){
       n = n->next;
     } //while
     return nullptr;
-  } //ND_BLOCK    
+  } //ND_BLOCK
+  case ND_FUNCALL: {
+    //printf("test funcall\n");
+    IR* ir = new_ir(IR_FUNCALL);
+    ir->d = new_reg();
+    //printf("test funcall2\n");
+    ir->funcname = node->funcname;
+    //printf("test funcall3\n");
+    return ir->d;
+  } //ND_FUNCALL
     
   } //switch
 } //gen_expr_IR

@@ -78,6 +78,7 @@ enum NodeKind{
   ND_WHILE, //while
   ND_FOR, //for
   ND_BLOCK, //{}
+  ND_FUNCALL, //function call
   ND_NULL,
 };
 
@@ -110,6 +111,9 @@ struct Node{
   //block
   Node* body;
   Node* next;
+
+  //function call
+  char* funcname; //function name
 };
 
 
@@ -159,6 +163,7 @@ enum IRKind{
   IR_RETURN, //return
   IR_BR, //branch
   IR_JMP, //jump
+  IR_FUNCALL, //function call
 };
 
 struct Reg{
@@ -195,6 +200,9 @@ struct IR{
   BasicBlock* bb1;
   BasicBlock* bb2;
   //Reg* bbarg;
+
+  char* funcname; //function name
+  
 };
 
 extern std::list<IR*> IR_list;

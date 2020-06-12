@@ -2,6 +2,7 @@
 
 static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
 static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
+static const std::string argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static unsigned int labelseq = 1;
 
 void print_cmp(const std::string inst, const IR* ir){
@@ -118,6 +119,11 @@ void gen(const IR* ir){
     printf("  pop r10\n");
     printf("  mov %s, rax\n", regs[d].c_str());
     */
+    
+    for (int i = 0; i < ir->num_args; i++){
+      printf("  mov %s, %s\n", argregs[i].c_str(), regs[ir->args[i]->rn].c_str());
+    } //for
+    
     printf("  push r10\n");
     printf("  push r11\n");
     printf("  mov rax, 0\n");

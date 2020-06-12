@@ -114,6 +114,7 @@ struct Node{
 
   //function call
   char* funcname; //function name
+  Node* args; //function arguments
 };
 
 
@@ -202,7 +203,8 @@ struct IR{
   //Reg* bbarg;
 
   char* funcname; //function name
-  
+  Reg* args[6]; //arguments
+  int num_args; //the number of arguments
 };
 
 extern std::list<IR*> IR_list;

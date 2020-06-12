@@ -202,12 +202,19 @@ Reg* gen_expr_IR(Node* node){
     return nullptr;
   } //ND_BLOCK
   case ND_FUNCALL: {
-    //printf("test funcall\n");
+    Reg* args[6];
+    int num_args = 0;
+    Node* arg = node->args;
+    for(arg; arg; arg = arg->next){
+      args[num_args] = gen_expr_IR(arg);
+      num_args++;
+    } //for
+    
     IR* ir = new_ir(IR_FUNCALL);
     ir->d = new_reg();
-    //printf("test funcall2\n");
     ir->funcname = node->funcname;
-    //printf("test funcall3\n");
+    ir->num_args = num_args;
+    memcpy(ir->args, args, sizeof(args));
     return ir->d;
   } //ND_FUNCALL
     

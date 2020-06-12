@@ -55,6 +55,13 @@ const std::vector<Reg*> collect_reg(){
 
       set_last_use(ir->a, ic);
       set_last_use(ir->b, ic);
+
+      if(ir->opcode == IR_FUNCALL){
+        for(int i = 0; i < ir->num_args; i++){
+	  set_last_use(ir->args[i], ic);
+	} //for
+      } //if
+      
       ic++;
     } //for it_inst
   } //for iter

@@ -229,6 +229,24 @@ Node* unary(){
 
 } //urary()
 
+Node* func_args(){
+
+  if(consume(")")){
+    //引数がないとき
+    return nullptr;
+  }
+
+  Node* head = assign();
+  Node* curr = head;
+  while(consume(",")){
+    curr->next = assign();
+    curr = curr->next;
+  } //while
+  expect(")");
+  return head;
+
+} //func_args()
+
 // primary = "(" expr ")"
 //           | num
 //           | ident ("(" ")")?
@@ -245,8 +263,7 @@ Node* primary() {
       //function call
       Node* node = new_node(ND_FUNCALL);
       node->funcname = strndup(tok->str, tok->len); //文字列複製
-      //node->args = func_args();
-      expect(")");
+      node->args = func_args();
       return node;
     } //if(consume("("))
 

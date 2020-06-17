@@ -1,12 +1,11 @@
 #include "jcc.h"
 
-std::list<LVar*> locals;
+LVar* locals;
 int nlabel = 1;
 
 LVar* find_lvar(Token* tok){
-  //LVar* var = locals;
-  for(auto iter = locals.begin(), end = locals.end(); iter != end; ++iter){
-    LVar* var = *iter;
+  LVar* var = locals;
+  for(var; var; var = var->next){
     if(var->len == tok->len && !memcmp(tok->str, var->name, var->len)){
       return var;
     } //if
@@ -33,14 +32,102 @@ Node* new_num(const int val){
   return node;
 }
 
-// program = stmt*
-void program(){
-  int i = 0;
+// program = function*
+Program* program(){
+  
+  Function head = {};
+  Function* curr = &head;
+
   while(!at_eof()){
-    ir_code[i++] = stmt();
-  }
-  ir_code[i] = NULL;
+    Function* fn = function();
+    if(!fn){
+      continue;
+    }
+    curr->next = fn;
+    curr = curr->next;
+    continue;
+  } //while()
+
+  Program* prog = (Program*)calloc(1, sizeof(Program));
+  prog->fns = head.next;
+  return prog;
 } //program()
+
+LVar* read_func_param(){
+
+  Token* tok = consume_ident();
+  if(tok){
+    LVar* lvar = (LVar*)calloc(1, sizeof(LVar));
+
+    lvar->next = locals;
+    //locals.push_back(lvar);
+    lvar->name = tok->str;
+    lvar->len = tok->len;
+
+    if(locals){
+      lvar->offset = locals->offset + 8;
+    } else {
+      lvar->offset = 8;
+    } //if
+
+    locals = lvar;
+    //locals.push_back(lvar);
+    return lvar;
+  } //if(tok)
+
+  return NULL;
+} //read_func_param()
+
+
+void read_func_params(Function* fn){
+
+  if(consume(")")){
+    //引数なしのとき
+    return;
+  }
+
+  fn->params = read_func_param();
+  LVar* curr = fn->params;
+
+  while(!consume(")")){
+    expect(",");
+
+    curr->next = read_func_param();
+    curr = curr->next;    
+  } //while
+
+} //read_func_params()
+
+//function = ident "(" params? ")" "{" stmt* "}"
+//params = param ("," param)*
+//param = ident
+Function* function(){
+
+  locals = NULL;
+  //locals.clear();
+
+  char* name = expect_ident();
+  //Function* fn = (Function*)calloc(1, sizeof(Function));
+  Function* fn = new Function();
+  fn->name = name;
+  expect("(");
+  read_func_params(fn);
+
+
+  //read function body
+  Node head = {};
+  Node* curr = &head;
+  expect("{");
+  while(!consume("}")){
+    curr->next = stmt();
+    curr = curr->next;
+  } //while
+
+  fn->node = head.next;
+  fn->locals = locals; //segv
+  
+  return fn;  
+} //function()
 
 //stmt = expr ";"
 //      | "{" stmt* "}"
@@ -249,7 +336,7 @@ Node* func_args(){
 
 // primary = "(" expr ")"
 //           | num
-//           | ident ("(" ")")?
+//           | ident func_args?
 Node* primary() {
   if(consume(std::string("(").c_str())) {
     Node *node = expr();
@@ -277,22 +364,22 @@ Node* primary() {
       node->offset = lvar->offset;
     } else {
       lvar = (LVar*)calloc(1, sizeof(LVar));
-      //lvar->next = locals;
-      locals.push_back(lvar);
+      lvar->next = locals;
+      //locals.push_back(lvar);
       lvar->name = tok->str;
       lvar->len = tok->len;
       
-      if(!locals.empty()){
-	lvar->offset = locals.front()->offset + 8;
+      if(locals){
+	lvar->offset = locals->offset + 8;
       } else {
 	lvar->offset = 8;
       } //if
       node->offset = lvar->offset;
       node->lvar = lvar;
-      //locals = lvar;
+      locals = lvar;
     } //if
     return node;
-} //if tok
+  } //if tok
 
   return new_num(expect_number());
 } //primary()

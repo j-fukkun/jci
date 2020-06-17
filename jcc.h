@@ -117,8 +117,25 @@ struct Node{
   Node* args; //function arguments
 };
 
+class BasicBlock;
+class Function{
+ public:
+  Function* next;
+  char* name;
+  LVar* params;
+  std::list<BasicBlock*> bbs;
 
-extern std::list<LVar*> locals;
+  Node* node; //function body
+  LVar* locals; //local variables in function
+  int stack_size;
+};
+
+struct Program{
+  Function* fns;
+};
+
+
+extern LVar* locals;
 extern int nlabel;
 
 LVar* find_lvar(Token* tok);
@@ -126,7 +143,8 @@ Node* new_node(const NodeKind kind);
 Node* new_binary(const NodeKind kind, Node* lhs, Node* rhs);
 Node* new_num(const int val);
 
-void program();
+Program* program();
+Function* function();
 Node* stmt();
 Node* expr();
 Node* assign();
@@ -137,7 +155,7 @@ Node* mul();
 Node* unary();
 Node* primary();
 
-extern Node* ir_code[100];
+//extern Node* ir_code[100];
 
 //
 //IR generator
@@ -159,6 +177,7 @@ enum IRKind{
   IR_LVAR, //local var
   IR_STORE, //store
   IR_STORE_SPILL,
+  IR_STORE_ARG, //function params
   IR_LOAD,  //load
   IR_LOAD_SPILL,
   IR_RETURN, //return
@@ -167,8 +186,8 @@ enum IRKind{
   IR_FUNCALL, //function call
 };
 
-struct Reg{
-
+class Reg{
+ public:
   int vn; //virtual register number
   int rn; //real register number
 
@@ -179,8 +198,9 @@ struct Reg{
   LVar* lvar;
 };
 
-struct IR;
-struct BasicBlock{
+class IR;
+class BasicBlock{
+ public:
   int label;
   std::list<IR*> instructions;
 
@@ -189,7 +209,8 @@ struct BasicBlock{
   std::list<BasicBlock*> pred;
 };
 
-struct IR{
+class IR{
+ public:
   IRKind opcode; //operation code  d = a op b
   Reg* d; //destination operand
   Reg* a; //source operand left
@@ -207,8 +228,8 @@ struct IR{
   int num_args; //the number of arguments
 };
 
-extern std::list<IR*> IR_list;
-extern std::list<BasicBlock*> BB_list;
+//extern std::list<IR*> IR_list;
+//extern std::list<BasicBlock*> BB_list;
 
 IR* new_ir(const IRKind opcode);
 Reg* new_reg();
@@ -216,7 +237,7 @@ Reg* new_imm(const int imm);
 IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b);
 Reg* gen_binop_IR(const IRKind op, Node* node);
 Reg* gen_expr_IR(Node* node);
-void gen_IR();
+void gen_IR(Program* prog);
 
 
 //
@@ -226,14 +247,12 @@ void gen_IR();
 //void convertThreeToTwo();
 //const std::vector<Reg*> collect_reg();
 //const bool allocateRegister();
-void allocateRegister();
+void allocateRegister(Program* prog);
 
 
 //
 // code generator
 //
-void print_cmp(const std::string inst, const IR* ir);
-void gen(const IR* ir);
-void gen_last(const int d);
+void gen_x86(Program* prog);
 
 #endif

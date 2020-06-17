@@ -4,6 +4,7 @@ static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r1
 static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
 static const std::string argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static unsigned int labelseq = 1;
+static char* funcname;
 
 void print_cmp(const std::string inst, const IR* ir){
   //EQ,NE,LT,LEの命令を出力
@@ -64,10 +65,7 @@ void gen(const IR* ir){
     break;
   case IR_RETURN:
     printf("  mov rax, %s\n", regs[a].c_str());
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
-    //printf("  jmp %s\n", ret);
+    printf("  jmp .L.return.%s\n", funcname);
     break;
   case IR_LOAD:
     printf("  mov %s, [%s]\n", regs[d].c_str(), regs[b].c_str());
@@ -80,6 +78,9 @@ void gen(const IR* ir){
     break;
   case IR_STORE_SPILL:
     printf("  mov [rbp-%d], %s", ir->lvar->offset, regs[a].c_str());
+    break;
+  case IR_STORE_ARG:
+    printf("  mov [rbp-%d], %s\n", ir->lvar->offset, argregs[ir->imm].c_str());
     break;
   case IR_BR:
     printf("  cmp %s, 0\n", regs[b].c_str());
@@ -135,6 +136,53 @@ void gen(const IR* ir){
   } //switch 
 } //gen()
 
-void gen_last(const int d){
-  printf("  mov rax, %s\n", regs[d].c_str());
-}
+void emit_text(Program* prog){
+
+  printf(".text\n");
+
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    printf(".global %s\n", fn->name);
+    printf("%s:\n", fn->name);
+    funcname = fn->name;
+
+    //プロローグ
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", fn->stack_size);
+    printf("  push r12\n");
+    printf("  push r13\n");
+    printf("  push r14\n");
+    printf("  push r15\n");
+    
+    //generate code from IR
+    for(auto iter = fn->bbs.begin(), end = fn->bbs.end(); iter != end; ++iter){
+      BasicBlock* bb = (*iter);
+      printf(".L%d:\n", bb->label);
+      for(auto it_inst = bb->instructions.begin(), end_inst = bb->instructions.end();
+	  it_inst != end_inst; ++it_inst){
+	gen(*it_inst);
+      } //for it_inst
+    } //for iter
+
+    //エピローグ
+    printf(".L.return.%s:\n", funcname);
+    printf("  pop r15\n");
+    printf("  pop r14\n");
+    printf("  pop r13\n");
+    printf("  pop r12\n");
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    
+} //for fn
+  
+} //emit_text()
+
+void gen_x86(Program* prog){
+
+  printf(".intel_syntax noprefix\n");
+
+  emit_text(prog);
+  
+} //gen_x86()

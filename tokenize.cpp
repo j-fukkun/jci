@@ -73,7 +73,7 @@ const int expect_number(){
 
 char* expect_ident(){
   if(token->kind != TK_IDENT){
-    char msg[] = "expented an identifier";
+    char msg[] = "expected an identifier";
     error_at(token->str, msg);
   } //if
   char* s = strndup(token->str, token->len);

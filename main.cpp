@@ -2,15 +2,16 @@
 
 char* user_input;
 Token* token;
-Node* ir_code[100];
-std::list<IR*> IR_list;
-std::list<BasicBlock*> BB_list;
+//Node* ir_code[100];
+//std::list<IR*> IR_list;
+//std::list<BasicBlock*> BB_list;
 
 //
 //IR dump
 //
-void IR_dump(){
-
+/*
+void IR_dump(Program* prog){
+  
   for(auto iter = BB_list.begin(), end = BB_list.end(); iter != end; ++iter){
     
     for(auto it_inst = (*iter)->instructions.begin(), end_inst = (*iter)->instructions.end(); it_inst != end_inst; ++it_inst){
@@ -61,7 +62,7 @@ void IR_dump(){
   } //for iter
   
 } //IR_dump()
-
+*/
 
 int main(int argc, char **argv){
   if(argc != 2){
@@ -72,32 +73,28 @@ int main(int argc, char **argv){
   //tokenize
   user_input = argv[1];
   token = tokenize();
-  program();
+  Program* prog = program();
 
-  //アセンブリの前半部分を出力
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  //プロローグ
-  //変数26個文の領域を確保する
-  printf("  push rbp\n");;
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
-
-  gen_IR();
-
-  //IR_dump();
+  gen_IR(prog);
   
-  allocateRegister();
-  //IR_dump();
+  //IR_dump(prog);
   
-  for(auto iter = BB_list.begin(), end = BB_list.end(); iter != end; ++iter){
-    printf(".L%d:\n", (*iter)->label);
-    for(auto it_inst = (*iter)->instructions.begin(), end_inst = (*iter)->instructions.end(); it_inst != end_inst; ++it_inst){
-      gen(*it_inst);
+  allocateRegister(prog);
+  //IR_dump(prog);
+
+  //スタックサイズを計算
+  //すべての変数を、とりあえず、8バイトとする
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    int offset = 0;
+    LVar* lvar = fn->locals;
+    for(lvar; lvar; lvar = lvar->next){
+      offset += 8;
     } //for
+    fn->stack_size = offset;
   } //for
+  
+  gen_x86(prog);
   
   return 0;
 

@@ -1,26 +1,28 @@
 #include "jcc.h"
 
 static int nreg = 1;
-static BasicBlock* out;
+static Function* func = nullptr;
+static BasicBlock* out = nullptr;
 
 BasicBlock* new_bb(){
   //BasicBlock* bb = (BasicBlock*)calloc(1, sizeof(BasicBlock));
   BasicBlock* bb = new BasicBlock();
   bb->label = nlabel++;
-  BB_list.push_back(bb);
+  func->bbs.push_back(bb);
   return bb;  
 } //new_bb()
 
 IR* new_ir(const IRKind opcode){
-  IR* ir = (IR*)calloc(1, sizeof(IR));
+  //IR* ir = (IR*)calloc(1, sizeof(IR));
+  IR* ir = new IR();
   ir->opcode = opcode;
-  //IR_list.push_back(ir);
   out->instructions.push_back(ir);
   return ir;
 } //new_ir()
 
 Reg* new_reg(){
-  Reg* reg = (Reg*)calloc(1, sizeof(Reg));
+  //Reg* reg = (Reg*)calloc(1, sizeof(Reg));
+  Reg* reg = new Reg();
   reg->vn = nreg++;
   reg->rn = -1;
   return reg;
@@ -123,6 +125,7 @@ Reg* gen_expr_IR(Node* node){
     Reg* r = gen_expr_IR(node->lhs);
     IR* ir = new_ir(IR_RETURN);
     ir->a = r;
+    ir->d = nullptr;
     out = new_bb();
     return nullptr;
   } //ND_RETURN
@@ -221,18 +224,37 @@ Reg* gen_expr_IR(Node* node){
   } //switch
 } //gen_expr_IR
 
-void gen_IR(){
-
-  // Add an empty entry BB to make later analysis easy.
-  out = new_bb();
-  //BasicBlock* bb = new_bb();
-  //jmp(bb);
-  //out = bb;
+void gen_param(LVar* param, const unsigned int i){
+  IR* ir = new_ir(IR_STORE_ARG);
+  ir->lvar = param;
+  ir->imm = i;
+  //ir->size = var->ty->size;
   
-  int i = 0;
-  for(i = 0; ir_code[i]; i++){
-    gen_expr_IR(ir_code[i]);
-  } //for
+} //gen_param()
+
+void gen_IR(Program* prog){
+
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    func = fn;
+    // Add an empty entry BB to make later analysis easy.
+    out = new_bb();
+    //BasicBlock* bb = new_bb();
+    //jmp(bb);
+    //out = bb;
+
+    unsigned int i = 0;
+    LVar* param = fn->params;
+    for(param; param; param = param->next, i++){
+      gen_param(param, i);
+    } //for param
+    
+    Node* n = fn->node;
+    for(n; n; n = n->next){
+      gen_expr_IR(n);
+    } //for n
+    
+  } //for fn
   
 } //gen_IR()
 

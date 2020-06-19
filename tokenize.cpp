@@ -12,7 +12,7 @@ void error(char* fmt, ...){
 }
 
 // Reports an error location and exit.
-void error_at(char* loc, char* fmt, ...){
+void error_at(char* loc, const char* fmt, ...){
   va_list ap;
   va_start(ap, fmt);
 
@@ -81,6 +81,15 @@ char* expect_ident(){
   return s;
 } //expect_ident()
 
+Token* peek(const char* s){
+  if(token->kind != TK_RESERVED
+     || strlen(s) != token->len
+     || strncmp(token->str, s, token->len)){
+    return NULL;
+  }
+  return token;
+} //peek()
+
 const bool at_eof(){
   return token->kind == TK_EOF;
 } //at_eof()
@@ -139,10 +148,10 @@ Token* tokenize(){
 
     //複数文字を区切る
     //multi-letter
-    if(startswith(p, std::string("==").c_str())
-       || startswith(p, std::string("!=").c_str())
-       || startswith(p, std::string("<=").c_str())
-       || startswith(p, std::string(">=").c_str())){
+    if(startswith(p, "==")
+       || startswith(p, "!=")
+       || startswith(p, "<=")
+       || startswith(p, ">=")){
       cur = new_token(TK_RESERVED, cur, p, 2);
       p += 2;
       continue;

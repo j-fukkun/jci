@@ -42,12 +42,13 @@ extern char* user_input;
 extern Token* token;
 
 void error(char* fmt, ...);
-void error_at(char* loc, char* fmt, ...);
+void error_at(char* loc, const char* fmt, ...);
 bool consume(const char* op);
 Token* consume_ident();
 void expect(const char* op);
 const int expect_number();
 char* expect_ident();
+Token* peek(const char* s);
 const bool at_eof();
 Token* new_token(TokenKind kind, Token* cur, char* str, int len);
 const bool is_alphabet(char c);

@@ -91,6 +91,8 @@ Reg* gen_binop_IR(const IRKind op, Node* node){
 Reg* gen_expr_IR(Node* node){
 
   switch(node->kind){
+  case ND_NULL:
+    return nullptr;
   case ND_NUM:
     return new_imm(node->val);
   case ND_ADD:

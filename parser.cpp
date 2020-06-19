@@ -32,6 +32,16 @@ Node* new_num(const int val){
   return node;
 }
 
+//ローカル変数のnew
+LVar* new_lvar(char* name){
+  LVar* lvar = (LVar*)calloc(1, sizeof(LVar));
+  lvar->next = locals;
+  lvar->name = name;
+  lvar->len = strlen(name);
+  locals = lvar;
+  return lvar;
+} //new_lvar
+
 // program = function*
 Program* program(){
   
@@ -53,8 +63,17 @@ Program* program(){
   return prog;
 } //program()
 
+//basetype = int
+void basetype(){
+
+  expect("int");
+  
+} //basetype()
+
+//param = basetype ident
 LVar* read_func_param(){
 
+  basetype();
   Token* tok = consume_ident();
   if(tok){
     LVar* lvar = (LVar*)calloc(1, sizeof(LVar));
@@ -63,13 +82,13 @@ LVar* read_func_param(){
     //locals.push_back(lvar);
     lvar->name = tok->str;
     lvar->len = tok->len;
-
+    /*
     if(locals){
       lvar->offset = locals->offset + 8;
     } else {
       lvar->offset = 8;
     } //if
-
+    */
     locals = lvar;
     //locals.push_back(lvar);
     return lvar;
@@ -78,7 +97,7 @@ LVar* read_func_param(){
   return NULL;
 } //read_func_param()
 
-
+//params = param ("," param)*
 void read_func_params(Function* fn){
 
   if(consume(")")){
@@ -98,14 +117,15 @@ void read_func_params(Function* fn){
 
 } //read_func_params()
 
-//function = ident "(" params? ")" "{" stmt* "}"
+//function = basetype ident "(" params? ")" "{" stmt* "}"
 //params = param ("," param)*
-//param = ident
+//param = basetype ident
 Function* function(){
 
   locals = NULL;
   //locals.clear();
 
+  basetype();
   char* name = expect_ident();
   //Function* fn = (Function*)calloc(1, sizeof(Function));
   Function* fn = new Function();
@@ -124,10 +144,27 @@ Function* function(){
   } //while
 
   fn->node = head.next;
-  fn->locals = locals; //segv
-  
+  fn->locals = locals; 
   return fn;  
 } //function()
+
+bool is_typename(){
+
+  return peek("int");
+
+} //is_typename()
+
+//declaration = basetype ident ";"
+Node* declaration(){
+
+  basetype();
+  char* name = expect_ident();
+  expect(";");
+
+  LVar* lvar = new_lvar(name);
+  return new_node(ND_NULL); //変数宣言では、コード生成はしない
+    
+} //declaration()
 
 //stmt = expr ";"
 //      | "{" stmt* "}"
@@ -135,6 +172,7 @@ Function* function(){
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | declaration
 Node* stmt(){
   Node* node;
 
@@ -214,11 +252,15 @@ Node* stmt(){
     return node;    
   } //if(consume("{"))
 
+  if(is_typename()){
+    //変数宣言
+    return declaration();
+  } 
+
   //expr ";"
   node = expr();
   expect(";");
   return node;
-  
   
 } //stmt()
 
@@ -371,8 +413,9 @@ Node* primary() {
     LVar* lvar = find_lvar(tok);
     if(lvar){
       node->lvar = lvar;
-      node->offset = lvar->offset;
+      //node->offset = lvar->offset;
     } else {
+      /*
       lvar = (LVar*)calloc(1, sizeof(LVar));
       lvar->next = locals;
       //locals.push_back(lvar);
@@ -387,6 +430,8 @@ Node* primary() {
       node->offset = lvar->offset;
       node->lvar = lvar;
       locals = lvar;
+      */
+      error_at(tok->str, "undefined variable");
     } //if
     return node;
   } //if tok

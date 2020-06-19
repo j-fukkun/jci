@@ -302,15 +302,25 @@ Node* mul(){
   }
 } //mul()
 
-//unary = ("+" | "-")? unary
+//unary = ("+" | "-" | "*" | "&")? unary
 //        | primary
 Node* unary(){
-  if(consume(std::string("+").c_str())){
+  if(consume("+")){
     //printf("unary() +\n");
     return unary();
   }
-  if(consume(std::string("-").c_str())){
+  if(consume("-")){
     return new_binary(ND_SUB, new_num(0), unary());
+  }
+  if(consume("*")){
+    Node* node = new_node(ND_DEREF);
+    node->lhs = unary();
+    return node;
+  }
+  if(consume("&")){
+    Node* node = new_node(ND_ADDR);
+    node->lhs = unary();
+    return node;
   }
   return primary();
 

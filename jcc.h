@@ -79,6 +79,8 @@ enum NodeKind{
   ND_FOR, //for
   ND_BLOCK, //{}
   ND_FUNCALL, //function call
+  ND_DEREF, //rereference *
+  ND_ADDR, //address &
   ND_NULL,
 };
 

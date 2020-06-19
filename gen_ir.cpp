@@ -220,6 +220,13 @@ Reg* gen_expr_IR(Node* node){
     memcpy(ir->args, args, sizeof(args));
     return ir->d;
   } //ND_FUNCALL
+  case ND_ADDR:
+    return gen_lval_IR(node->lhs);
+  case ND_DEREF: {
+    Reg* r = new_reg();
+    load(node, r, gen_expr_IR(node->lhs));
+    return r;
+  } //ND_DEREF
     
   } //switch
 } //gen_expr_IR

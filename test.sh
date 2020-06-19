@@ -46,4 +46,5 @@ try 5 'main(){a = 0; b = 5; if(b > 10) a = 10; else a = 5; return a;}'
 try 20 'main(){a = 0; b = 5; c = 0; if(b < 10){ a = 10; c = 20;} else {a = 5; c = 30;} return c;}'
 try 24 'kaijo(a){ if(a == 0) return 1; b = a * kaijo(a-1); return b;} main(){return kaijo(4);}'
 try 55 'fibo(a){if(a == 0) return 0; else if(a == 1) return 1; else return (fibo(a-1)+fibo(a-2));} main(){return fibo(10);}'
+try 10 'main(){a = 10; b = &a; return *b;}'
 echo OK

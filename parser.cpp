@@ -33,11 +33,12 @@ Node* new_num(const int val){
 }
 
 //ローカル変数のnew
-LVar* new_lvar(char* name){
+LVar* new_lvar(Token* tok, Type* type){
   LVar* lvar = (LVar*)calloc(1, sizeof(LVar));
   lvar->next = locals;
-  lvar->name = name;
-  lvar->len = strlen(name);
+  lvar->name = tok->str;
+  lvar->len = tok->len;
+  lvar->type = type;
   locals = lvar;
   return lvar;
 } //new_lvar
@@ -63,38 +64,27 @@ Program* program(){
   return prog;
 } //program()
 
-//basetype = int
-void basetype(){
+//basetype = "int" "*"*
+Type* basetype(){
 
   expect("int");
-  
+  Type* type = int_type;
+  while(consume("*")){
+    type = pointer_to(type);
+  }
+  return type;
 } //basetype()
 
 //param = basetype ident
 LVar* read_func_param(){
 
-  basetype();
+  Type* type = basetype();
   Token* tok = consume_ident();
   if(tok){
-    LVar* lvar = (LVar*)calloc(1, sizeof(LVar));
-
-    lvar->next = locals;
-    //locals.push_back(lvar);
-    lvar->name = tok->str;
-    lvar->len = tok->len;
-    /*
-    if(locals){
-      lvar->offset = locals->offset + 8;
-    } else {
-      lvar->offset = 8;
-    } //if
-    */
-    locals = lvar;
-    //locals.push_back(lvar);
-    return lvar;
+    return new_lvar(tok, type);
   } //if(tok)
 
-  return NULL;
+  return nullptr;
 } //read_func_param()
 
 //params = param ("," param)*
@@ -125,11 +115,13 @@ Function* function(){
   locals = NULL;
   //locals.clear();
 
-  basetype();
-  char* name = expect_ident();
+  Type* type = basetype();
+  //char* name = expect_ident();
+  Token* tok = expect_ident();
   //Function* fn = (Function*)calloc(1, sizeof(Function));
   Function* fn = new Function();
-  fn->name = name;
+  //fn->name = name;
+  fn->name = strndup(tok->str, tok->len);
   expect("(");
   read_func_params(fn);
 
@@ -157,11 +149,12 @@ bool is_typename(){
 //declaration = basetype ident ";"
 Node* declaration(){
 
-  basetype();
-  char* name = expect_ident();
+  Type* type = basetype();
+  //char* name = expect_ident();
+  Token* tok = expect_ident();
   expect(";");
 
-  LVar* lvar = new_lvar(name);
+  LVar* lvar = new_lvar(/*name*/tok, type);
   return new_node(ND_NULL); //変数宣言では、コード生成はしない
     
 } //declaration()
@@ -413,24 +406,7 @@ Node* primary() {
     LVar* lvar = find_lvar(tok);
     if(lvar){
       node->lvar = lvar;
-      //node->offset = lvar->offset;
     } else {
-      /*
-      lvar = (LVar*)calloc(1, sizeof(LVar));
-      lvar->next = locals;
-      //locals.push_back(lvar);
-      lvar->name = tok->str;
-      lvar->len = tok->len;
-      
-      if(locals){
-	lvar->offset = locals->offset + 8;
-      } else {
-	lvar->offset = 8;
-      } //if
-      node->offset = lvar->offset;
-      node->lvar = lvar;
-      locals = lvar;
-      */
       error_at(tok->str, "undefined variable");
     } //if
     return node;

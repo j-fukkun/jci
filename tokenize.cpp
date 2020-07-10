@@ -71,14 +71,16 @@ const int expect_number(){
   return val;
 } //expect_number()
 
-char* expect_ident(){
+Token* expect_ident(){
   if(token->kind != TK_IDENT){
     char msg[] = "expected an identifier";
     error_at(token->str, msg);
   } //if
   char* s = strndup(token->str, token->len);
+  Token* t = token;
   token = token->next;
-  return s;
+  //return s;
+  return t;
 } //expect_ident()
 
 Token* peek(const char* s){

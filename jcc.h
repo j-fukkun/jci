@@ -47,7 +47,7 @@ bool consume(const char* op);
 Token* consume_ident();
 void expect(const char* op);
 const int expect_number();
-char* expect_ident();
+Token* expect_ident();
 Token* peek(const char* s);
 const bool at_eof();
 Token* new_token(TokenKind kind, Token* cur, char* str, int len);
@@ -85,12 +85,15 @@ enum NodeKind{
   ND_NULL,
 };
 
+struct Type;
+
 //type for local variable
 struct LVar{
   LVar* next; //次の変数 or NULL
   char* name; //変数の名前
   int len; //変数名の長さ
   int offset; //RBPからのオフセット
+  Type* type;
 };
 
 // AST node type
@@ -100,7 +103,7 @@ struct Node{
   Node* lhs;     // Left-hand side
   Node* rhs;     // Right-hand side
   int val;       // Used if kind == ND_NUM
-  int offset;    // Used if kind == ND_LVAR
+  //int offset;    // Used if kind == ND_LVAR
 
   LVar* lvar;
 
@@ -118,6 +121,8 @@ struct Node{
   //function call
   char* funcname; //function name
   Node* args; //function arguments
+
+  Type* type;
 };
 
 class BasicBlock;
@@ -137,6 +142,25 @@ struct Program{
   Function* fns;
 };
 
+
+extern Type* int_type;
+enum TypeKind{
+  TY_INT,
+  TY_PTR,
+};
+
+class Type{
+ public:
+  TypeKind kind;
+  Type* base;    //pointer
+
+  Type(){}
+  Type(TypeKind k){kind = k;}
+  Type(TypeKind k, Type* b){kind = k; base = b;}
+  ~Type(){}
+};
+
+Type* pointer_to(Type* base);
 
 extern LVar* locals;
 extern int nlabel;

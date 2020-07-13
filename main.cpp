@@ -2,9 +2,6 @@
 
 char* user_input;
 Token* token;
-//Node* ir_code[100];
-//std::list<IR*> IR_list;
-//std::list<BasicBlock*> BB_list;
 
 //
 //IR dump

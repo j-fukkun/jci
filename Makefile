@@ -13,6 +13,6 @@ test: jcc
 	sh test.sh
 
 clean:
-	rm -f jcc *.o *~ tmp*
+	rm -f jcc *.o *~ tmp* a.out
 
 .PHONY: test clean

@@ -48,6 +48,21 @@ void gen(const IR* ir){
     printf("  idiv %s\n", regs[b].c_str());
     printf("  mov %s, rax\n", regs[d].c_str());
     break;
+  case IR_PTR_ADD:
+    printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
+    printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    break;
+  case IR_PTR_SUB:
+    printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
+    printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    break;
+  case IR_PTR_DIFF:
+    printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    printf("  cqo\n");
+    printf("  mov %s, %d\n", regs[b].c_str(), ir->type_base_size);
+    printf("  idiv %s\n", regs[b].c_str());
+    printf("  mov %s, rax\n", regs[d].c_str());
+    break;
   case IR_EQ:
     print_cmp(std::string("sete"), ir);
     break;

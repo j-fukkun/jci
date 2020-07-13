@@ -82,6 +82,9 @@ enum NodeKind{
   ND_FUNCALL, //function call
   ND_DEREF, //rereference *
   ND_ADDR, //address &
+  ND_PTR_ADD, //pointer add
+  ND_PTR_SUB, //pointer sub
+  ND_PTR_DIFF, //pointer difference
   ND_NULL,
 };
 
@@ -152,15 +155,22 @@ enum TypeKind{
 class Type{
  public:
   TypeKind kind;
+  int size;
+  int align;
   Type* base;    //pointer
 
   Type(){}
-  Type(TypeKind k){kind = k;}
-  Type(TypeKind k, Type* b){kind = k; base = b;}
+  //Type(TypeKind k){kind = k;}
+  Type(TypeKind k, int sz, int ali)
+    {kind = k; size = sz; align = ali; base = nullptr;}
   ~Type(){}
 };
 
+bool is_integer(Type* t);
 Type* pointer_to(Type* base);
+int align_to(int n, int align);
+void add_type(Node* node);
+
 
 extern LVar* locals;
 extern int nlabel;
@@ -173,6 +183,7 @@ Node* new_num(const int val);
 Program* program();
 Function* function();
 Node* stmt();
+Node* stmt2();
 Node* expr();
 Node* assign();
 Node* equality();
@@ -211,6 +222,9 @@ enum IRKind{
   IR_BR, //branch
   IR_JMP, //jump
   IR_FUNCALL, //function call
+  IR_PTR_ADD, //pointer add
+  IR_PTR_SUB, //pointer sub
+  IR_PTR_DIFF, //pointer difference
 };
 
 class Reg{
@@ -253,10 +267,11 @@ class IR{
   char* funcname; //function name
   Reg* args[6]; //arguments
   int num_args; //the number of arguments
+
+  int type_size;
+  int type_base_size;
 };
 
-//extern std::list<IR*> IR_list;
-//extern std::list<BasicBlock*> BB_list;
 
 IR* new_ir(const IRKind opcode);
 Reg* new_reg();

@@ -44,7 +44,7 @@ IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b){
   return ir;
 } //emit_IR()
 
-IR* br(Reg* r, BasicBlock* then, BasicBlock* els) {
+IR* br(Reg* r, BasicBlock* then, BasicBlock* els){
   IR* ir = new_ir(IR_BR);
   ir->b = r;
   ir->bb1 = then;
@@ -58,16 +58,16 @@ IR* jmp(BasicBlock* bb){
   return ir;
 } //jmp()
 
-IR* jmp_arg(BasicBlock* bb, Reg* r) {
+IR* jmp_arg(BasicBlock* bb, Reg* r){
   IR* ir = new_ir(IR_JMP);
   ir->bb1 = bb;
   //ir->bbarg = r;
   return ir;
 } //jmp_arg()
 
-void load(Node* node, Reg* dst, Reg* src) {
+void load(Node* node, Reg* dst, Reg* src){
   IR *ir = emit_IR(IR_LOAD, dst, NULL, src);
-  //ir->size = node->ty->size;
+  ir->type_size = node->type->size;
 } //load()
 
 Reg* gen_lval_IR(Node* node){
@@ -84,7 +84,8 @@ Reg* gen_binop_IR(const IRKind op, Node* node){
   Reg* d = new_reg();
   Reg* a = gen_expr_IR(node->lhs);
   Reg* b = gen_expr_IR(node->rhs);
-  emit_IR(op, d, a, b);
+  IR* ir = emit_IR(op, d, a, b);
+  ir->type_base_size = (node->type->base != nullptr) ? node->type->base->size : 0;
   return d;
 } //gen_binop_IR()
 
@@ -103,6 +104,12 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_MUL, node);
   case ND_DIV:
     return gen_binop_IR(IR_DIV, node);
+  case ND_PTR_ADD:
+    return gen_binop_IR(IR_PTR_ADD, node);
+  case ND_PTR_SUB:
+    return gen_binop_IR(IR_PTR_SUB, node);
+  case ND_PTR_DIFF:
+    return gen_binop_IR(IR_PTR_DIFF, node);
   case ND_EQ:
     return gen_binop_IR(IR_EQ, node);
   case ND_NE:
@@ -120,7 +127,7 @@ Reg* gen_expr_IR(Node* node){
     Reg* d = gen_lval_IR(node->lhs);
     Reg* a = gen_expr_IR(node->rhs);
     IR* ir = emit_IR(IR_STORE, NULL, d, a);
-    //ir->size = node->ty->size;
+    ir->type_size = node->type->size;
     return a;
   } //ND_ASSIGN
   case ND_RETURN: {

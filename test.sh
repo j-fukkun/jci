@@ -46,5 +46,7 @@ try 5 'int main(){int a; a = 0; int b; b = 5; if(b > 10) a = 10; else a = 5; ret
 try 20 'int main(){int a; a = 0; int b; b = 5; int c; c = 0; if(b < 10){ a = 10; c = 20;} else {a = 5; c = 30;} return c;}'
 try 24 'int kaijo(int a){ if(a == 0) return 1; int b; b = a * kaijo(a-1); return b;} int main(){return kaijo(4);}'
 try 55 'int fibo(int a){if(a == 0) return 0; else if(a == 1) return 1; else return (fibo(a-1)+fibo(a-2));} int main(){return fibo(10);}'
-try 10 'int main(){int a; a = 10; int b; b = &a; return *b;}'
+try 10 'int main(){int a; a = 10; int* b; b = &a; return *b;}'
+try 4 'int main(){int a; return sizeof(a);}'
+
 echo OK

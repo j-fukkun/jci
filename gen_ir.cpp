@@ -244,7 +244,7 @@ void gen_param(LVar* param, const unsigned int i){
   IR* ir = new_ir(IR_STORE_ARG);
   ir->lvar = param;
   ir->imm = i;
-  //ir->size = var->ty->size;
+  ir->type_size = param->type->size;
   
 } //gen_param()
 

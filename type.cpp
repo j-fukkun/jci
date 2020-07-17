@@ -10,24 +10,17 @@ bool is_integer(Type* t){
 } //is_integer()
 
 Type* new_type(TypeKind kind, int size, int align){
-  /*
-  Type* type = calloc(1, sizeof(Type));
-  type->kind = kind;
-  type->size = size;
-  type->align = align;
-  */
   Type* type = new Type(kind, size, align);
   return type;
 } //new_type()
 
 Type* pointer_to(Type* base){
-  Type* type = new Type();
-  type->kind = TY_PTR;
+  Type* type = new Type(TY_PTR, 8, 8);
   type->base = base;
   return type;
 } //pointer_to()
 
-int align_to(int n, int align){
+const int align_to(const int n, const int align){
   return (n + align - 1) & ~(align -1);
 } //align_to()
 

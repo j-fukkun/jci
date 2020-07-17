@@ -1,8 +1,13 @@
 #include "jcc.h"
 
-static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
-static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
-static const std::string argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"}; //64bit 8byte
+static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"}; //8bit 1byte
+static const std::string regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"}; //32bit 4byte
+
+static const std::string argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"}; //64bit 8byte
+static const std::string argregs8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"}; //8bit 1byte
+static const std::string argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"}; //32bit 4byte
+
 static unsigned int labelseq = 1;
 static char* funcname;
 
@@ -17,6 +22,34 @@ void print_cmp(const std::string inst, const IR* ir){
   printf("  movzb %s, %s\n", regs[d].c_str(), regs8[d].c_str()); //64bitレジスタの上位56bitをゼロクリア
   
 } //print_cmp()
+
+const std::string reg(const int r, const int size){
+  
+  if(size == 1){
+    return regs8[r];
+  }
+
+  if(size == 4){
+    return regs32[r];
+  }
+  assert(size == 8);
+  return regs[r];
+  
+} //reg()
+
+const std::string argreg(const int r, const int size){
+  
+  if(size == 1){
+    return argregs8[r];
+  }
+
+  if(size == 4){
+    return argregs32[r];
+  }
+  assert(size == 8);
+  return argregs[r];
+  
+} //reg()
 
 
 void gen(const IR* ir){
@@ -83,19 +116,19 @@ void gen(const IR* ir){
     printf("  jmp .L.return.%s\n", funcname);
     break;
   case IR_LOAD:
-    printf("  mov %s, [%s]\n", regs[d].c_str(), regs[b].c_str());
+    printf("  mov %s, [%s]\n", reg(d, ir->type_size).c_str(), regs[b].c_str());
     break;
   case IR_LOAD_SPILL:
     printf("  mov %s, [rbp-%d]", regs[d].c_str(), ir->lvar->offset);
     break;
   case IR_STORE:
-    printf("  mov [%s], %s\n", regs[a].c_str(), regs[b].c_str());
+    printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
     break;
   case IR_STORE_SPILL:
     printf("  mov [rbp-%d], %s", ir->lvar->offset, regs[a].c_str());
     break;
   case IR_STORE_ARG:
-    printf("  mov [rbp-%d], %s\n", ir->lvar->offset, argregs[ir->imm].c_str());
+    printf("  mov [rbp-%d], %s\n", ir->lvar->offset, argreg(ir->imm, ir->type_size).c_str());
     break;
   case IR_BR:
     printf("  cmp %s, 0\n", regs[b].c_str());

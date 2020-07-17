@@ -168,7 +168,7 @@ class Type{
 
 bool is_integer(Type* t);
 Type* pointer_to(Type* base);
-int align_to(int n, int align);
+const int align_to(const int n, const int align);
 void add_type(Node* node);
 
 

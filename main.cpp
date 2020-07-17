@@ -86,7 +86,9 @@ int main(int argc, char **argv){
     int offset = 0;
     LVar* lvar = fn->locals;
     for(lvar; lvar; lvar = lvar->next){
-      offset += 8;
+      //offset += 8;
+      offset = align_to(offset, lvar->type->align);
+      offset += lvar->type->size;
       lvar->offset = offset;
     } //for
     fn->stack_size = offset;

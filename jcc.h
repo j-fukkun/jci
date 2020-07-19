@@ -150,6 +150,7 @@ extern Type* int_type;
 enum TypeKind{
   TY_INT,
   TY_PTR,
+  TY_ARRAY,
 };
 
 class Type{
@@ -158,6 +159,7 @@ class Type{
   int size;
   int align;
   Type* base;    //pointer
+  int array_size; //size of array
 
   Type(){}
   //Type(TypeKind k){kind = k;}
@@ -168,6 +170,7 @@ class Type{
 
 bool is_integer(Type* t);
 Type* pointer_to(Type* base);
+Type* array_of(Type* base, int size);
 const int align_to(const int n, const int align);
 void add_type(Node* node);
 
@@ -182,6 +185,9 @@ Node* new_num(const int val);
 
 Program* program();
 Function* function();
+Type* type_suffix(Type*);
+const int const_expr();
+const int eval(Node*);
 Node* stmt();
 Node* stmt2();
 Node* expr();

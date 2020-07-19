@@ -48,5 +48,10 @@ try 24 'int kaijo(int a){ if(a == 0) return 1; int b; b = a * kaijo(a-1); return
 try 55 'int fibo(int a){if(a == 0) return 0; else if(a == 1) return 1; else return (fibo(a-1)+fibo(a-2));} int main(){return fibo(10);}'
 try 10 'int main(){int a; a = 10; int* b; b = &a; return *b;}'
 try 4 'int main(){int a; return sizeof(a);}'
+try 8 'int main(){int* x; return sizeof(x);}'
+try 4 'int main(){int x; return sizeof(x+3);}'
+try 4 'int main(){return sizeof(1);}'
+try 4 'int main(){return sizeof(sizeof(5));}'
+try 3 'int main(){int a[1+1]; *a=1; *(a+1)=2; int* p; p=a; return *p + *(p+1);}'
 
 echo OK

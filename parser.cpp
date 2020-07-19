@@ -140,24 +140,75 @@ Function* function(){
   return fn;  
 } //function()
 
+
 bool is_typename(){
 
   return peek("int");
 
 } //is_typename()
 
-//declaration = basetype ident ";"
+
+//declaration = basetype ident type_suffix ";"
 Node* declaration(){
 
   Type* type = basetype();
   //char* name = expect_ident();
   Token* tok = expect_ident();
+
+  type = type_suffix(type);
+  
   expect(";");
 
   LVar* lvar = new_lvar(/*name*/tok, type);
   return new_node(ND_NULL); //変数宣言では、コード生成はしない
     
 } //declaration()
+
+
+//type_suffix = ("[" const_expr "]" type_suffix)?
+Type* type_suffix(Type* type){
+  if(!consume("[")){
+    return type;
+  }
+
+  int size = 0;
+
+  if(!consume("]")){
+    size = const_expr();
+
+    expect("]");
+  } //if
+
+  type = type_suffix(type);
+
+  type = array_of(type, size);
+
+  return type;
+} //type_suffix()
+
+
+const int const_expr(){
+  return eval(add());
+} //const_expr()
+
+
+const int eval(Node* node){
+  switch(node->kind){
+  case ND_ADD:
+    return eval(node->lhs) + eval(node->rhs);
+  case ND_SUB:
+    return eval(node->lhs) - eval(node->rhs);
+  case ND_MUL:
+    return eval(node->lhs) * eval(node->rhs);
+  case ND_DIV:
+    return eval(node->lhs) / eval(node->rhs);
+  case ND_NUM:
+    return node->val;
+
+  } //switch()
+  error("not a constant expression");
+}
+
 
 Node* stmt(){
   Node* node = stmt2();

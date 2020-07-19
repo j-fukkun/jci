@@ -161,7 +161,7 @@ Token* tokenize(){
 
     //１つの文字を区切る
     //single-letter
-    if (strchr("+-*/()<>;={},&", *p)) {
+    if (strchr("+-*/()<>;={},&[]", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     } //if single-letter

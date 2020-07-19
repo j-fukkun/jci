@@ -71,7 +71,11 @@ void load(Node* node, Reg* dst, Reg* src){
 } //load()
 
 Reg* gen_lval_IR(Node* node){
-
+  
+  if(node->kind == ND_DEREF){
+    return gen_expr_IR(node->lhs);
+  }
+  
   assert(node->kind == ND_LVAR);
   IR* ir;
   ir = new_ir(IR_LVAR);

@@ -197,6 +197,7 @@ Node* relational();
 Node* add();
 Node* mul();
 Node* unary();
+Node* postfix();
 Node* primary();
 
 //extern Node* ir_code[100];

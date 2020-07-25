@@ -435,9 +435,15 @@ Node* mul(){
   }
 } //mul()
 
+Node* new_unary(NodeKind kind, Node* lhs){
+  Node* node = new_node(kind);
+  node->lhs = lhs;
+  return node;
+} //new_unary()
+
 //unary = ("+" | "-" | "*" | "&")? unary
 //        | "sizeof" unary
-//        | primary
+//        | postfix
 Node* unary(){
   if(consume("+")){
     //printf("unary() +\n");
@@ -461,9 +467,29 @@ Node* unary(){
     add_type(node);
     return new_num(node->type->size);
   }
-  return primary();
+  return postfix();
 
 } //urary()
+
+//postfix = primary ("[" expr "]")*
+Node* postfix(){
+
+  Node* node = primary();
+
+  for(;;){
+    if(consume("[")){
+      //a[b] => *(a + b)
+      Node* tmp = new_add(node, expr());
+      expect("]");
+      node = new_unary(ND_DEREF, tmp);
+      continue;
+    } //if "["
+
+    break;
+  } //for
+
+  return node;
+} //postfix
 
 Node* func_args(){
 

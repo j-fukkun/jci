@@ -123,9 +123,13 @@ Reg* gen_expr_IR(Node* node){
   case ND_LE:
     return gen_binop_IR(IR_LE, node);
   case ND_LVAR: {
-    Reg* r = new_reg();
-    load(node, r, gen_lval_IR(node));
-    return r;
+    //配列はアドレスを計算するだけで良い
+    if(node->type->kind != TY_ARRAY){
+      Reg* r = new_reg();
+      load(node, r, gen_lval_IR(node));
+      return r;
+    }
+    return gen_lval_IR(node);
   } //ND_LVAR
   case ND_ASSIGN: {
     Reg* d = gen_lval_IR(node->lhs);
@@ -236,9 +240,13 @@ Reg* gen_expr_IR(Node* node){
   case ND_ADDR:
     return gen_lval_IR(node->lhs);
   case ND_DEREF: {
-    Reg* r = new_reg();
-    load(node, r, gen_expr_IR(node->lhs));
-    return r;
+    //配列はloadしない
+    if(node->type->kind != TY_ARRAY){
+      Reg* r = new_reg();
+      load(node, r, gen_expr_IR(node->lhs));
+      return r;
+    }
+    return gen_expr_IR(node->lhs);
   } //ND_DEREF
     
   } //switch

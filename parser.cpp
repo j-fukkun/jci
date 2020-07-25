@@ -43,28 +43,38 @@ Node* new_num(const int val){
   return node;
 }
 
-Var* new_var(Token* tok, Type* type, bool is_local){
+Var* new_var(char* name, Type* type, bool is_local){
   Var* var = (Var*)calloc(1, sizeof(Var));
   //var->name = tok->str;
-  var->name = strndup(tok->str, tok->len);
-  var->len = tok->len;
+  //var->name = strndup(tok->str, tok->len);
+  var->name = name;
+  //var->len = tok->len;
+  var->len = strlen(name);
   var->type = type;
   var->is_local = is_local;
   return var;
 } //new_var()
 
+Node* new_var_node(Var* v){
+  Node* node = new_node(ND_VAR);
+  node->var = v;
+  return node;
+}
+
 //ローカル変数のnew
-Var* new_lvar(Token* tok, Type* type){
-  Var* lvar = new_var(tok, type, true);
+Var* new_lvar(char* name, Type* type){
+  Var* lvar = new_var(name, type, true);
   lvar->next = locals;
   locals = lvar;
   return lvar;
 } //new_lvar
 
 //グローバル変数のnew
-Var* new_gvar(Token* tok, Type* type){
-  Var* gvar = new_var(tok, type, false);
+Var* new_gvar(char* name, Type* type, const bool is_literal, char* literal){
+  Var* gvar = new_var(name, type, false);
   gvar->next = globals;
+  gvar->is_literal = is_literal;
+  gvar->literal = literal;
   globals = gvar;
   return gvar;
 } //new_gvar()
@@ -92,7 +102,8 @@ bool is_function(){
   bool is_func = false;
 
   Type* type = basetype();
-  Token* tok = expect_ident();
+  //Token* tok = expect_ident();
+  char* name = expect_ident();
   is_func = consume("(");
 
   token = t;
@@ -103,11 +114,12 @@ bool is_function(){
 void global_var(){
   
   Type* type = basetype();
-  Token* tok = expect_ident();
+  //Token* tok = expect_ident();
+  char* name = expect_ident();
   type = type_suffix(type);
   expect(";");
   
-  Var* gvar = new_gvar(tok, type);
+  Var* gvar = new_gvar(/*tok*/name, type, false, NULL);
   
 } //global_var()
 
@@ -145,7 +157,8 @@ Var* read_func_param(){
   Type* type = basetype();
   Token* tok = consume_ident();
   if(tok){
-    return new_lvar(tok, type);
+    char* name = strndup(tok->str, tok->len);
+    return new_lvar(name, type);
   } //if(tok)
 
   return nullptr;
@@ -179,9 +192,11 @@ Function* function(){
   locals = NULL;
 
   Type* type = basetype();
-  Token* tok = expect_ident();
+  //Token* tok = expect_ident();
+  char* name = expect_ident();
   Function* fn = new Function();
-  fn->name = strndup(tok->str, tok->len);
+  //fn->name = strndup(tok->str, tok->len);
+  fn->name = name;
   expect("(");
   read_func_params(fn);
 
@@ -212,13 +227,14 @@ bool is_typename(){
 Node* declaration(){
 
   Type* type = basetype();
-  Token* tok = expect_ident();
+  //Token* tok = expect_ident();
+  char* name = expect_ident();
 
   type = type_suffix(type);
   
   expect(";");
 
-  Var* lvar = new_lvar(tok, type);
+  Var* lvar = new_lvar(/*tok*/name, type);
   return new_node(ND_NULL); //変数宣言では、コード生成はしない
     
 } //declaration()
@@ -568,9 +584,18 @@ Node* func_args(){
 
 } //func_args()
 
+static char* new_label(){
+  static int count = 0;
+  char buf[20];
+  sprintf(buf, ".L.data.%d", count);
+  ++count;
+  return strndup(buf, 20);
+} //new_label()
+
 // primary = "(" expr ")"
-//           | num
 //           | ident func_args?
+//           | string_literal
+//           | num
 Node* primary() {
   if(consume(std::string("(").c_str())) {
     Node *node = expr();
@@ -589,7 +614,7 @@ Node* primary() {
     } //if(consume("("))
 
     //variable
-    Node* node =  new_node(ND_VAR);
+    Node* node = new_node(ND_VAR);
     Var* lvar = find_lvar(tok);
     Var* gvar = find_gvar(tok);
 
@@ -602,6 +627,13 @@ Node* primary() {
     } //if
     return node;
   } //if tok
+
+  tok = consume_str();
+  if(tok){
+    Type* type = array_of(char_type, tok->str_len);
+    Var* gvar = new_gvar(new_label(), type, true, tok->strings);
+    return new_var_node(gvar);
+  } //if(tok) consume_str()
 
   return new_num(expect_number());
 } //primary()

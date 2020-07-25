@@ -22,6 +22,7 @@ enum TokenKind{
   TK_RESERVED, /*記号*/
   TK_NUM, /*整数*/
   TK_IDENT, //識別子
+  TK_STR, //文字列
   TK_EOF, /*入力の終わりを表すトークン*/
 };
 
@@ -33,6 +34,9 @@ struct Token{
   int val; /*kindがTK_NUMの場合、その数値*/
   char *str; /*トークン文字列*/
   int len; //トークンの長さ
+
+  char* strings; //string literal including '\0'
+  int str_len; //string literal length
 };
 
 //input program
@@ -45,9 +49,10 @@ void error(char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
 bool consume(const char* op);
 Token* consume_ident();
+Token* consume_str();
 void expect(const char* op);
 const int expect_number();
-Token* expect_ident();
+char* expect_ident();
 Token* peek(const char* s);
 const bool at_eof();
 Token* new_token(TokenKind kind, Token* cur, char* str, int len);
@@ -98,6 +103,10 @@ struct Var{
   int offset; //RBPからのオフセット for local variable
   Type* type;
   bool is_local; //if this is true then local var else global var
+  bool is_literal; //if this is true then string literal
+
+  //for global variable
+  char* literal; //string literal
 };
 
 // AST node type

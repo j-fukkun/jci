@@ -47,6 +47,15 @@ Token* consume_ident(){
   return t;
 } //consume_ident()
 
+Token* consume_str(){
+  if(token->kind != TK_STR){
+    return NULL;
+  } //if
+  Token* t = token;
+  token = token->next;
+  return t;  
+} //consume_str()
+
 /*次のトークンが期待している記号のときには、トークンを一つ読み進める。*/
 /*それ以外の場合には、エラーを報告する*/
 void expect(const char* op){
@@ -71,16 +80,16 @@ const int expect_number(){
   return val;
 } //expect_number()
 
-Token* expect_ident(){
+char* expect_ident(){
   if(token->kind != TK_IDENT){
     char msg[] = "expected an identifier";
     error_at(token->str, msg);
   } //if
   char* s = strndup(token->str, token->len);
-  Token* t = token;
+  //Token* t = token;
   token = token->next;
-  //return s;
-  return t;
+  return s;
+  //return t;
 } //expect_ident()
 
 Token* peek(const char* s){
@@ -134,6 +143,36 @@ const char* startswith_reserved(char* p){
   return NULL;
 } //startswith_reserved()
 
+Token* read_string(Token* cur, char* start){
+
+  char* p = start + 1;
+  char buf[1024];
+  int len = 0;
+
+  for(;;){
+    if(len == sizeof(buf)){
+      error_at(start, "string literal is too large");
+    }
+    if(*p == '\0'){
+      error_at(start, "unclosed string literal");
+    }
+    if(*p == '"'){
+      break;
+    }
+    buf[len] = *p;
+    ++len;
+    ++p;
+  } //for
+
+  Token* tok = new_token(TK_STR, cur, start, p-start+1);
+  tok->strings = (char*)malloc(len + 1);
+  memcpy(tok->strings, buf, len);
+  tok->strings[len] = '\0'; //文字列の最後
+  tok->str_len = len + 1;
+  return tok;
+
+} //read_string()
+
 /*入力文字列pをトークナイズしてそれを返す*/
 Token* tokenize(){
   char* p = user_input;
@@ -147,6 +186,12 @@ Token* tokenize(){
       p++;
       continue;
     }
+
+    //string literal
+    if(*p == '"'){
+      cur = read_string(cur, p);
+      p += cur->len;
+    } //if(*p == '"')
 
     //複数文字を区切る
     //multi-letter

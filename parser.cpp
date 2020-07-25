@@ -69,11 +69,17 @@ Var* new_gvar(Token* tok, Type* type){
   return gvar;
 } //new_gvar()
 
-//basetype = "int" "*"*
+//basetype = builtin-type "*"*
+//builtin-type = "int" | "char"
 Type* basetype(){
 
-  expect("int");
-  Type* type = int_type;
+  Type* type = nullptr;
+  if(consume("int")){
+    type = int_type;
+  } else if(consume("char")){
+    type = char_type;
+  } //if
+  
   while(consume("*")){
     type = pointer_to(type);
   }
@@ -197,7 +203,7 @@ Function* function(){
 
 bool is_typename(){
 
-  return peek("int");
+  return peek("int") || peek("char");
 
 } //is_typename()
 

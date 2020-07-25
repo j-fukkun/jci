@@ -148,8 +148,11 @@ struct Program{
 
 
 extern Type* int_type;
+extern Type* char_type;
+
 enum TypeKind{
   TY_INT,
+  TY_CHAR,
   TY_PTR,
   TY_ARRAY,
 };

@@ -72,8 +72,8 @@ void add_type(Node *node) {
   case ND_ASSIGN:
     node->type = node->lhs->type;
     return;
-  case ND_LVAR:
-    node->type = node->lvar->type;
+  case ND_VAR:
+    node->type = node->var->type;
     return;
   case ND_ADDR: //address &
     //node->type = pointer_to(node->lhs->type);

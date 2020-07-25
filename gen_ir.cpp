@@ -13,7 +13,6 @@ BasicBlock* new_bb(){
 } //new_bb()
 
 IR* new_ir(const IRKind opcode){
-  //IR* ir = (IR*)calloc(1, sizeof(IR));
   IR* ir = new IR();
   ir->opcode = opcode;
   out->instructions.push_back(ir);
@@ -21,7 +20,6 @@ IR* new_ir(const IRKind opcode){
 } //new_ir()
 
 Reg* new_reg(){
-  //Reg* reg = (Reg*)calloc(1, sizeof(Reg));
   Reg* reg = new Reg();
   reg->vn = nreg++;
   reg->rn = -1;
@@ -76,11 +74,18 @@ Reg* gen_lval_IR(Node* node){
     return gen_expr_IR(node->lhs);
   }
   
-  assert(node->kind == ND_LVAR);
+  assert(node->kind == ND_VAR);
+  Var* var = node->var;
   IR* ir;
-  ir = new_ir(IR_LVAR);
-  ir->d = new_reg();
-  ir->lvar = node->lvar;
+  if(var->is_local){
+    ir = new_ir(IR_LVAR);
+    ir->d = new_reg();
+    ir->lvar = var;
+  } else {
+    ir = new_ir(IR_LABEL_ADDR);
+    ir->d = new_reg();
+    ir->name = var->name;
+  }
   return ir->d;
 } //gen_lval_IR()
 
@@ -122,7 +127,7 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_LT, node);
   case ND_LE:
     return gen_binop_IR(IR_LE, node);
-  case ND_LVAR: {
+  case ND_VAR: {
     //配列はアドレスを計算するだけで良い
     if(node->type->kind != TY_ARRAY){
       Reg* r = new_reg();
@@ -252,7 +257,7 @@ Reg* gen_expr_IR(Node* node){
   } //switch
 } //gen_expr_IR
 
-void gen_param(LVar* param, const unsigned int i){
+void gen_param(Var* param, const unsigned int i){
   IR* ir = new_ir(IR_STORE_ARG);
   ir->lvar = param;
   ir->imm = i;
@@ -272,7 +277,7 @@ void gen_IR(Program* prog){
     //out = bb;
 
     unsigned int i = 0;
-    LVar* param = fn->params;
+    Var* param = fn->params;
     for(param; param; param = param->next, i++){
       gen_param(param, i);
     } //for param

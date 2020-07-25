@@ -169,15 +169,13 @@ void allocateRegister(Program* prog){
 	continue;
       } //if
       
-      LVar* lvar = new LVar();
+      Var* lvar = new Var();
       char tmp[] = "spill";
       lvar->name = tmp;
+      lvar->type = pointer_to(int_type);
+      lvar->is_local = true;
       reg->lvar = lvar;
-      if(fn->locals){
-	lvar->offset = fn->locals->offset + 8;
-      } else {
-	lvar->offset = 8;
-      } //if
+      
       lvar->next = fn->locals;
       fn->locals = lvar;
       

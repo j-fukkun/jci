@@ -73,7 +73,7 @@ enum NodeKind{
   ND_LT, //<
   ND_LE, //<=
   ND_ASSIGN, //assignment
-  ND_LVAR, //local variant
+  ND_VAR, //local or global variant
   ND_RETURN, //return
   ND_IF, //if
   ND_WHILE, //while
@@ -91,12 +91,13 @@ enum NodeKind{
 struct Type;
 
 //type for local variable
-struct LVar{
-  LVar* next; //次の変数 or NULL
+struct Var{
+  Var* next; //次の変数 or NULL
   char* name; //変数の名前
   int len; //変数名の長さ
-  int offset; //RBPからのオフセット
+  int offset; //RBPからのオフセット for local variable
   Type* type;
+  bool is_local; //if this is true then local var else global var
 };
 
 // AST node type
@@ -106,9 +107,8 @@ struct Node{
   Node* lhs;     // Left-hand side
   Node* rhs;     // Right-hand side
   int val;       // Used if kind == ND_NUM
-  //int offset;    // Used if kind == ND_LVAR
 
-  LVar* lvar;
+  Var* var;
 
   //"if","while","for"
   Node* cond;
@@ -133,16 +133,17 @@ class Function{
  public:
   Function* next;
   char* name;
-  LVar* params;
+  Var* params;
   std::list<BasicBlock*> bbs;
 
   Node* node; //function body
-  LVar* locals; //local variables in function
+  Var* locals; //local variables in function
   int stack_size;
 };
 
 struct Program{
   Function* fns;
+  Var* globals;
 };
 
 
@@ -175,10 +176,11 @@ const int align_to(const int n, const int align);
 void add_type(Node* node);
 
 
-extern LVar* locals;
+extern Var* locals;
+extern Var* globals;
 extern int nlabel;
 
-LVar* find_lvar(Token* tok);
+Var* find_lvar(Token* tok);
 Node* new_node(const NodeKind kind);
 Node* new_binary(const NodeKind kind, Node* lhs, Node* rhs);
 Node* new_num(const int val);
@@ -232,6 +234,7 @@ enum IRKind{
   IR_PTR_ADD, //pointer add
   IR_PTR_SUB, //pointer sub
   IR_PTR_DIFF, //pointer difference
+  IR_LABEL_ADDR, //global variable
 };
 
 class Reg{
@@ -243,7 +246,7 @@ class Reg{
   int def;
   int last_use;
   bool spill;
-  LVar* lvar;
+  Var* lvar;
 };
 
 class IR;
@@ -265,7 +268,8 @@ class IR{
   Reg* b; //source operand right 
 
   int imm; //immediate value
-  LVar* lvar;
+  Var* lvar;
+  char* name; //global var name
 
   BasicBlock* bb1;
   BasicBlock* bb2;

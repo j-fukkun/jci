@@ -130,6 +130,9 @@ void gen(const IR* ir){
   case IR_STORE_ARG:
     printf("  mov [rbp-%d], %s\n", ir->lvar->offset, argreg(ir->imm, ir->type_size).c_str());
     break;
+  case IR_LABEL_ADDR:
+    printf("  lea %s, %s\n", regs[d].c_str(), ir->name);
+    break;
   case IR_BR:
     printf("  cmp %s, 0\n", regs[b].c_str());
     printf("  jne .L%d\n", ir->bb1->label);
@@ -184,6 +187,20 @@ void gen(const IR* ir){
   } //switch 
 } //gen()
 
+void emit_data(Program* prog){
+
+  printf(".bss\n");
+
+  Var* gvar = prog->globals;
+  for(gvar; gvar; gvar = gvar->next){
+    printf(".align %d\n", gvar->type->align);
+    printf("%s:\n", gvar->name);
+    printf("  .zero %d\n", gvar->type->size);
+  } //for
+
+} //emit_data()
+
+
 void emit_text(Program* prog){
 
   printf(".text\n");
@@ -231,6 +248,7 @@ void gen_x86(Program* prog){
 
   printf(".intel_syntax noprefix\n");
 
+  emit_data(prog);
   emit_text(prog);
   
 } //gen_x86()

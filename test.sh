@@ -61,5 +61,7 @@ try 5 'int x; int main(){x = 2; int y; y = 3; return x+y;}'
 try 5 'int main(){char a; char c; a = 10; c = 5; return a - c;}'
 try 5 'int main(){char a[2]; a[0] = 2; a[1] = 3; return a[0] + a[1];}'
 try 48 'int main(){char a[3]; a[0] = "a"; a[1] = "b"; a[2] = "c"; return a[2];}'
+try 10 'int main(){int a; /*this is test*/ //test
+       a = 10; return 10;}'
 
 echo OK

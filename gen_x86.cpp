@@ -49,7 +49,23 @@ const std::string argreg(const int r, const int size){
   assert(size == 8);
   return argregs[r];
   
-} //reg()
+} //argreg()
+
+void load(const IR* ir){
+  const int d = ir->d ? ir->d->rn : 0;
+  const int b = ir->b ? ir->b->rn : 0;
+  const int size = ir->type_size;
+
+  if(size == 1){
+    printf("  movsx %s, byte ptr [%s]\n", regs[d].c_str(), regs[b].c_str());
+  } else if(size == 4){
+    printf("  movsxd %s, dword ptr [%s]\n", regs[d].c_str(), regs[b].c_str());
+  } else {
+    assert(size == 8);
+    printf("  mov %s, [%s]\n", regs[d].c_str(), regs[b].c_str());
+  } //if
+  
+}
 
 
 void gen(const IR* ir){
@@ -116,16 +132,18 @@ void gen(const IR* ir){
     printf("  jmp .L.return.%s\n", funcname);
     break;
   case IR_LOAD:
-    printf("  mov %s, [%s]\n", reg(d, ir->type_size).c_str(), regs[b].c_str());
+    //printf("  mov %s, [%s]\n", reg(d, ir->type_size).c_str(), regs[b].c_str());
+    load(ir);
     break;
   case IR_LOAD_SPILL:
-    printf("  mov %s, [rbp-%d]", regs[d].c_str(), ir->lvar->offset);
+    printf("  mov %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
     break;
   case IR_STORE:
     printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
+    //printf("  mov [%s], %s\n", regs[d].c_str(), reg(a, ir->type_size).c_str());
     break;
   case IR_STORE_SPILL:
-    printf("  mov [rbp-%d], %s", ir->lvar->offset, regs[a].c_str());
+    printf("  mov [rbp-%d], %s\n", ir->lvar->offset, regs[a].c_str());
     break;
   case IR_STORE_ARG:
     printf("  mov [rbp-%d], %s\n", ir->lvar->offset, argreg(ir->imm, ir->type_size).c_str());

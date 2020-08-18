@@ -140,6 +140,7 @@ Reg* gen_expr_IR(Node* node){
     Reg* d = gen_lval_IR(node->lhs);
     Reg* a = gen_expr_IR(node->rhs);
     IR* ir = emit_IR(IR_STORE, NULL, d, a);
+    //IR* ir = emit_IR(IR_STORE, d, a, NULL);
     ir->type_size = node->type->size;
     return a;
   } //ND_ASSIGN
@@ -277,9 +278,12 @@ void gen_IR(Program* prog){
     //out = bb;
 
     unsigned int i = 0;
-    Var* param = fn->params;
-    for(param; param; param = param->next, i++){
-      gen_param(param, i);
+    //Var* param = fn->params;
+    std::list<Var*> params = fn->params;
+    //for(param; param; param = param->next, i++){
+    for(auto param = params.begin(), end = params.end();
+	param != end; ++param, ++i){
+      gen_param(*param, i);
     } //for param
     
     Node* n = fn->node;

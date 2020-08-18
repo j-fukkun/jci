@@ -172,15 +172,19 @@ void read_func_params(Function* fn){
     return;
   }
 
-  fn->params = read_func_param();
-  Var* curr = fn->params;
-
+  //fn->params = read_func_param();
+  //Var* curr = fn->params;
+  std::list<Var*> params;
+  params.push_back(read_func_param());
+  
   while(!consume(")")){
     expect(",");
 
-    curr->next = read_func_param();
-    curr = curr->next;    
+    //curr->next = read_func_param();
+    //curr = curr->next;
+    params.push_back(read_func_param());
   } //while
+  fn->params = params;
 
 } //read_func_params()
 

@@ -9,10 +9,14 @@ jcc: $(OBJS)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-test: jcc
-	sh test.sh
+test: jcc 
+	gcc -c test/inc.c -o test/inc.o
+	./jcc test/test.c > test/test.s
+	gcc -o test/test test/inc.o test/test.s
+	test/test
 
 clean:
-	rm -f jcc *.o *~ tmp* a.out
+	rm -f jcc *.o *~ tmp* a.out *.s
+	rm -f test/*.s test/*~
 
 .PHONY: test clean

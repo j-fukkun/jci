@@ -45,6 +45,9 @@ extern char* user_input;
 /*current token*/
 extern Token* token;
 
+//input filename
+extern char* filename;
+
 void error(char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
 bool consume(const char* op);
@@ -95,7 +98,7 @@ enum NodeKind{
 
 struct Type;
 
-//type for local variable
+//type for variable
 struct Var{
   Var* next; //次の変数 or NULL
   char* name; //変数の名前
@@ -142,7 +145,8 @@ class Function{
  public:
   Function* next;
   char* name;
-  Var* params;
+  //Var* params;
+  std::list<Var*> params;
   std::list<BasicBlock*> bbs;
 
   Node* node; //function body

@@ -17,6 +17,6 @@ test: jcc
 
 clean:
 	rm -f jcc *.o *~ tmp* a.out *.s
-	rm -f test/*.s test/*~
+	rm -f test/*.s test/*~ test/*.o test/test
 
 .PHONY: test clean

@@ -93,6 +93,10 @@ enum NodeKind{
   ND_PTR_ADD, //pointer add
   ND_PTR_SUB, //pointer sub
   ND_PTR_DIFF, //pointer difference
+  ND_PRE_INC, //++a
+  ND_PRE_DEC, //--a
+  ND_POST_INC, //a++
+  ND_POST_DEC, //a--
   ND_NULL,
 };
 
@@ -212,6 +216,8 @@ Node* expr();
 Node* assign();
 Node* equality();
 Node* relational();
+Node* new_add(Node* lhs, Node* rhs);
+Node* new_sub(Node* lhs, Node* rhs);
 Node* add();
 Node* mul();
 Node* unary();

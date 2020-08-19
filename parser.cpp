@@ -486,10 +486,10 @@ Node* add(){
   Node* node = mul();
 
   for(;;){
-    if(consume(std::string("+").c_str())){
+    if(consume("+")){
       //node = new_binary(ND_ADD, node, mul());
       node = new_add(node, mul());
-    } else if(consume(std::string("-").c_str())){
+    } else if(consume("-")){
       //node = new_binary(ND_SUB, node, mul());
       node = new_sub(node, mul());
     } else {
@@ -505,9 +505,9 @@ Node* mul(){
   Node* node = unary();
 
   for (;;) {
-    if (consume(std::string("*").c_str()))
+    if (consume("*"))
       node = new_binary(ND_MUL, node, unary());
-    else if (consume(std::string("/").c_str()))
+    else if (consume("/"))
       node = new_binary(ND_DIV, node, unary());
     else
       return node;
@@ -521,6 +521,7 @@ Node* new_unary(NodeKind kind, Node* lhs){
 } //new_unary()
 
 //unary = ("+" | "-" | "*" | "&")? unary
+//        | ("++" | "--") unary
 //        | "sizeof" unary
 //        | postfix
 Node* unary(){
@@ -541,6 +542,15 @@ Node* unary(){
     node->lhs = unary();
     return node;
   }
+
+  if(consume("++")){
+    return new_unary(ND_PRE_INC, unary());
+  }
+  
+  if(consume("--")){
+    return new_unary(ND_PRE_DEC, unary());
+  }
+  
   if(consume("sizeof")){
     Node* node = unary();
     add_type(node);
@@ -550,7 +560,7 @@ Node* unary(){
 
 } //urary()
 
-//postfix = primary ("[" expr "]")*
+//postfix = primary ("[" expr "]" | "++" | "--")*
 Node* postfix(){
 
   Node* node = primary();
@@ -563,6 +573,16 @@ Node* postfix(){
       node = new_unary(ND_DEREF, tmp);
       continue;
     } //if "["
+
+    if(consume("++")){
+      node = new_unary(ND_POST_INC, node);
+      continue;
+    } //if ++
+
+    if(consume("--")){
+      node = new_unary(ND_POST_DEC, node);
+      continue;
+    } //if --
 
     break;
   } //for

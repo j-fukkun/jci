@@ -127,6 +127,27 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_LT, node);
   case ND_LE:
     return gen_binop_IR(IR_LE, node);
+  case ND_PRE_INC:{
+    //++i --> i = i + 1
+    Node* n = new_node(ND_ASSIGN);
+    n->lhs = node->lhs;
+    n->rhs = new_add(node->lhs, new_num(1));
+    add_type(n);
+    return gen_expr_IR(n);
+  }
+  case ND_PRE_DEC:{
+    //--i --> i = i - 1
+    Node* n = new_node(ND_ASSIGN);
+    n->lhs = node->lhs;
+    n->rhs = new_sub(node->lhs, new_num(1));
+    add_type(n);
+    return gen_expr_IR(n);
+  }
+    /*
+  case ND_POST_INC:
+
+  case ND_POST_DEC:
+    */
   case ND_VAR: {
     //配列はアドレスを計算するだけで良い
     if(node->type->kind != TY_ARRAY){

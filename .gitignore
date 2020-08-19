@@ -5,3 +5,4 @@ a.out
 jcc
 #*
 *.s
+test/test

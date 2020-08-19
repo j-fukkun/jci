@@ -47,8 +47,9 @@ int fib(int x){
 int gvar1;
 char gvar2;
 
-int main(){
 
+int main(){
+  
   assert(0, 0, "0");
   assert(42, 42, "42");
   
@@ -137,7 +138,13 @@ int main(){
   char* str;
   str = "abc";
   printf("%s\n", str);
+  
+  a = 0;
+  ++a;
+  assert(1, a, "++a");
 
+  --a;
+  assert(0, a, "--a");
   
   printf("OK.\n");
   return 0;

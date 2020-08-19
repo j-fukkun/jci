@@ -145,6 +145,12 @@ int main(){
 
   --a;
   assert(0, a, "--a");
+
+  a++;
+  assert(1, a, "a++");
+
+  a--;
+  assert(0, a, "a--");
   
   printf("OK.\n");
   return 0;

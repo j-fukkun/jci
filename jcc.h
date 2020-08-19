@@ -97,6 +97,8 @@ enum NodeKind{
   ND_PRE_DEC, //--a
   ND_POST_INC, //a++
   ND_POST_DEC, //a--
+  ND_STMT_EXPR, //stmt ...
+  ND_EXPR_STMT, //expr ...
   ND_NULL,
 };
 
@@ -142,6 +144,9 @@ struct Node{
   Node* args; //function arguments
 
   Type* type;
+
+  Node* expr;
+  std::vector<Node*> stmt;
 };
 
 class BasicBlock;

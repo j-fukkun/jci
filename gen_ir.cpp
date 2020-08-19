@@ -134,7 +134,7 @@ Reg* gen_expr_IR(Node* node){
     n->rhs = new_add(node->lhs, new_num(1));
     add_type(n);
     return gen_expr_IR(n);
-  }
+  } //ND_PRE_INC
   case ND_PRE_DEC:{
     //--i --> i = i - 1
     Node* n = new_node(ND_ASSIGN);
@@ -142,12 +142,16 @@ Reg* gen_expr_IR(Node* node){
     n->rhs = new_sub(node->lhs, new_num(1));
     add_type(n);
     return gen_expr_IR(n);
-  }
-    /*
-  case ND_POST_INC:
+  } //ND_PRE_DEC
+  case ND_POST_INC:{
+    //i++ --> t = i; i = i + 1; t;
+    Node* n = new_node(ND_ASSIGN);
+    
+    
+  } //ND_POST_INC
+  case ND_POST_DEC:{
 
-  case ND_POST_DEC:
-    */
+  } //ND_POST_DEC
   case ND_VAR: {
     //配列はアドレスを計算するだけで良い
     if(node->type->kind != TY_ARRAY){
@@ -165,6 +169,20 @@ Reg* gen_expr_IR(Node* node){
     ir->type_size = node->type->size;
     return a;
   } //ND_ASSIGN
+    
+  case ND_STMT_EXPR: {
+    for (auto iter = node->stmt.begin(), end = node->stmt.end(); iter != end; ++iter){
+      //gen_stmt(node->stmts->data[i]);
+      gen_expr_IR(*iter);
+    }
+    return gen_expr_IR(node->expr);
+  } //ND_STMT_EXPR
+    
+  case ND_EXPR_STMT: {
+    gen_expr_IR(node->expr);
+    return nullptr;
+  } //ND_EXPR_STMT
+    
   case ND_RETURN: {
     Reg* r = gen_expr_IR(node->lhs);
     IR* ir = new_ir(IR_RETURN);

@@ -45,6 +45,7 @@ void add_type(Node *node) {
   add_type(node->els);
   add_type(node->init);
   add_type(node->inc);
+  add_type(node->expr);
   
   Node* n = node->body;
   for (n; n; n = n->next){
@@ -89,7 +90,7 @@ void add_type(Node *node) {
       node->type = pointer_to(node->lhs->type);
     }
     return;
-  case ND_DEREF: //dereferrence *
+  case ND_DEREF: {//dereferrence *
     if(!node->lhs->type->base){
       error("invalid pointer dereference");
     } //if
@@ -97,6 +98,15 @@ void add_type(Node *node) {
     Type* t = node->lhs->type->base;
     node->type = t;    
     return;
+  }
+  case ND_STMT_EXPR: {
+    node->type = node->expr->type;
+    return;
+  }
+  case ND_EXPR_STMT: {
+    node->type = node->expr->type;
+    return;
+  }
   } //switch()
 } //add_type()
 

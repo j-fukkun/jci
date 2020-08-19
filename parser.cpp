@@ -45,10 +45,7 @@ Node* new_num(const int val){
 
 Var* new_var(char* name, Type* type, bool is_local){
   Var* var = (Var*)calloc(1, sizeof(Var));
-  //var->name = tok->str;
-  //var->name = strndup(tok->str, tok->len);
   var->name = name;
-  //var->len = tok->len;
   var->len = strlen(name);
   var->type = type;
   var->is_local = is_local;
@@ -78,6 +75,13 @@ Var* new_gvar(char* name, Type* type, const bool is_literal, char* literal){
   globals = gvar;
   return gvar;
 } //new_gvar()
+
+Node* new_expr(const NodeKind kind, Node* e){
+  Node* node = new_node(kind);
+  node->expr = e;
+  return node;
+} //new_expr()
+
 
 //basetype = builtin-type "*"*
 //builtin-type = "int" | "char"
@@ -560,6 +564,46 @@ Node* unary(){
 
 } //urary()
 
+Node* new_stmt_expr(const std::vector<Node*>& vec){
+  Node* last = *(--vec.end());
+  
+  std::vector<Node*> v;
+
+  for(auto iter = vec.begin(), end = vec.end(); iter != end; ++iter){
+    Node* n = new_expr(ND_EXPR_STMT, *iter);
+    add_type(n);
+    v.push_back(n);
+  } //for
+
+  Node* node = new_node(ND_STMT_EXPR);
+  node->stmt = v;
+  node->expr = last;
+  add_type(node);
+  return node;
+
+} //new_stmt_expr()
+
+//i++ --> t = i; i=i+1; t;
+Node* new_post_inc(Node* n, const int imm){
+  add_type(n);
+  
+  std::vector<Node*> vec;
+  Var* t = new_lvar("tmp", n->type);
+  vec.push_back(new_binary(ND_ASSIGN,
+			   new_var_node(t),
+			   n));
+  vec.push_back(new_binary(ND_ASSIGN,
+			   n,
+			   new_add(n, new_num(imm))
+			   )
+		);
+  Node* node_t = new_var_node(t);
+  add_type(node_t);
+  vec.push_back(node_t);
+  return new_stmt_expr(vec);
+  
+} //new_post_inc()
+
 //postfix = primary ("[" expr "]" | "++" | "--")*
 Node* postfix(){
 
@@ -575,12 +619,14 @@ Node* postfix(){
     } //if "["
 
     if(consume("++")){
-      node = new_unary(ND_POST_INC, node);
+      //node = new_unary(ND_POST_INC, node);
+      node = new_post_inc(node, 1);
       continue;
     } //if ++
 
     if(consume("--")){
-      node = new_unary(ND_POST_DEC, node);
+      //node = new_unary(ND_POST_DEC, node);
+      node = new_post_inc(node, -1);
       continue;
     } //if --
 

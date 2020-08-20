@@ -128,7 +128,9 @@ void gen(const IR* ir){
     printf("  lea %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
     break;
   case IR_RETURN:
-    printf("  mov rax, %s\n", regs[a].c_str());
+    if(ir->a != nullptr){
+      printf("  mov rax, %s\n", regs[a].c_str());
+    }
     printf("  jmp .L.return.%s\n", funcname);
     break;
   case IR_LOAD:

@@ -50,6 +50,7 @@ extern char* filename;
 
 void error(char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
 bool consume(const char* op);
 Token* consume_ident();
 Token* consume_str();
@@ -171,10 +172,12 @@ struct Program{
 
 extern Type* int_type;
 extern Type* char_type;
+extern Type* void_type;
 
 enum TypeKind{
   TY_INT,
   TY_CHAR,
+  TY_VOID,
   TY_PTR,
   TY_ARRAY,
 };

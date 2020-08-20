@@ -44,6 +44,10 @@ int fib(int x){
   }
 }
 
+void test_void(void){
+  return;
+}
+
 int gvar1;
 char gvar2;
 
@@ -117,7 +121,7 @@ int main(){
   }
   assert(10, a, "while(i<10){a=a+1; i=i+1;}");
 
-  int arr[4];
+  int arr[2+2];
   *arr = 1; *(arr+1)=2;
   assert(3, *arr + *(arr+1), "*arr + *(arr+1)");
 
@@ -151,6 +155,22 @@ int main(){
 
   a--;
   assert(0, a, "a--");
+
+  p = arr;
+  ++p;
+  assert(2, *p, "++p; *p");
+
+  p++;
+  assert(3, *p, "p++; *p");
+
+  --p;
+  assert(2, *p, "--p; *p");
+
+  p--;
+  assert(1, *p, "p--; *p");
+
+  test_void();
+  printf("test_void is OK\n");
   
   printf("OK.\n");
   return 0;

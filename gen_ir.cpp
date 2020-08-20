@@ -184,7 +184,12 @@ Reg* gen_expr_IR(Node* node){
   } //ND_EXPR_STMT
     
   case ND_RETURN: {
-    Reg* r = gen_expr_IR(node->lhs);
+    Reg* r;
+    if(node->lhs){
+      r = gen_expr_IR(node->lhs);
+    } else {
+      r = nullptr;
+    }
     IR* ir = new_ir(IR_RETURN);
     ir->a = r;
     ir->d = nullptr;

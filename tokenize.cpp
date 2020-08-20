@@ -11,19 +11,54 @@ void error(char* fmt, ...){
   exit(1);
 }
 
-// Reports an error location and exit.
-void error_at(char* loc, const char* fmt, ...){
-  va_list ap;
-  va_start(ap, fmt);
+// Reports an error message in the following format.
+//
+// foo.c:10: x = y + 1;
+//               ^ <error message here>
+void verror_at(char* loc, const char* fmt, va_list ap) {
+  // Find a line containing `loc`.
+  char *line = loc;
+  while (user_input < line && line[-1] != '\n')
+    line--;
 
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
+  char *end = loc;
+  while (*end != '\n')
+    end++;
+
+  // Get a line number.
+  int line_num = 1;
+  for (char *p = user_input; p < line; p++)
+    if (*p == '\n')
+      line_num++;
+
+  // Print out the line.
+  int indent = fprintf(stderr, "%s:%d: ", filename, line_num);
+  fprintf(stderr, "%.*s\n", (int)(end - line), line);
+
+  // Show the error message.
+  int pos = loc - line + indent;
   fprintf(stderr, "%*s", pos, ""); // print pos spaces.
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
+}
+
+// Reports an error location and exit.
+void error_at(char* loc, const char* fmt, ...){
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(loc, fmt, ap);
   exit(1);
 }
+
+// Reports an error location and exit.
+void error_tok(Token *tok, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(tok->str, fmt, ap);
+  exit(1);
+}
+
 
 //次のトークンが期待している記号のときには、トークンを一つ読み進めて
 //真を返す。それ以外の場合は、偽を返す

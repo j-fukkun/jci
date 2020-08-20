@@ -92,6 +92,8 @@ Type* basetype(){
     type = int_type;
   } else if(consume("char")){
     type = char_type;
+  } else if(consume("void")){
+    type = void_type;
   } //if
   
   while(consume("*")){
@@ -118,12 +120,16 @@ bool is_function(){
 void global_var(){
   
   Type* type = basetype();
-  //Token* tok = expect_ident();
+  Token* tok = token;
   char* name = expect_ident();
   type = type_suffix(type);
   expect(";");
+
+  if(type->kind == TY_VOID){
+    error_tok(tok, "variable declared void");
+  }
   
-  Var* gvar = new_gvar(/*tok*/name, type, false, NULL);
+  Var* gvar = new_gvar(name, type, false, NULL);
   
 } //global_var()
 
@@ -155,11 +161,17 @@ Program* program(){
 } //program()
 
 
-//param = basetype ident
+//param = basetype ident type_suffix
 Var* read_func_param(){
 
   Type* type = basetype();
   Token* tok = consume_ident();
+  type = type_suffix(type);
+
+  if(type->kind == TY_ARRAY){
+    type = pointer_to(type->base);
+  } //if
+  
   if(tok){
     char* name = strndup(tok->str, tok->len);
     return new_lvar(name, type);
@@ -175,6 +187,13 @@ void read_func_params(Function* fn){
     //引数なしのとき
     return;
   }
+
+  Token* tok = token;
+  if(consume("void") && consume(")")){
+    //args is void
+    return;
+  }
+  token = tok;
 
   //fn->params = read_func_param();
   //Var* curr = fn->params;
@@ -194,7 +213,7 @@ void read_func_params(Function* fn){
 
 //function = basetype ident "(" params? ")" "{" stmt* "}"
 //params = param ("," param)*
-//param = basetype ident
+//param = basetype ident type_suffix
 Function* function(){
 
   locals = NULL;
@@ -226,19 +245,23 @@ Function* function(){
 
 bool is_typename(){
 
-  return peek("int") || peek("char");
+  return peek("int") || peek("char") || peek("void");
 
 } //is_typename()
 
 
 //declaration = basetype ident type_suffix ";"
 Node* declaration(){
-
+  Token* tok = token;
   Type* type = basetype();
   //Token* tok = expect_ident();
   char* name = expect_ident();
 
   type = type_suffix(type);
+
+  if(type->kind == TY_VOID){
+    error_tok(tok, "variable declared void");
+  }
   
   expect(";");
 
@@ -314,6 +337,7 @@ Node* stmt2(){
     if(consume(";")){
       //"return" ";"
       node = new_node(ND_RETURN);
+      return node;
     } //if
     // "return" expr ";"
     node = new_node(ND_RETURN);

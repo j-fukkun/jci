@@ -183,6 +183,19 @@ int main(){
   assert(3, gvar5[2], "gvar5[2]");
   assert(2, gvar6[1], "gvar6[1]");
   printf("%s%s\n", gvar7, gvar8);
+
+  int fib10 = fib(10);
+  assert(55, fib10, "fib10");
+
+  int arr2[1+2] = {1,2,3};
+  assert(3, arr2[2], "arr[2]");
+
+  int arr3[] = {1,2,3,4,5};
+  assert(5, arr3[4], "arr3[4]");
+
+  char str2[] = "Local Initializer Test";
+  printf("%s\n", str2);
+  
   
   printf("OK.\n");
   return 0;

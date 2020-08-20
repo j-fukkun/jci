@@ -163,6 +163,11 @@ struct Initializer{
   int val;
 };
 
+struct Designator{
+  Designator* next;
+  int index; //for array
+};
+
 class BasicBlock;
 class Function{
  public:
@@ -246,6 +251,7 @@ Node* new_add(Node* lhs, Node* rhs);
 Node* new_sub(Node* lhs, Node* rhs);
 Node* add();
 Node* mul();
+Node* new_unary(NodeKind kind, Node* lhs);
 Node* unary();
 Node* postfix();
 Node* primary();

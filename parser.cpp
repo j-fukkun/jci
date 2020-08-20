@@ -406,8 +406,132 @@ bool is_typename(){
 
 } //is_typename()
 
+Node* new_desg_node2(Var* var, Designator* desg) {
+  if(!desg){
+    return new_var_node(var);
+  }
 
-//declaration = basetype ident type_suffix ";"
+  Node* node = new_desg_node2(var, desg->next);
+  /*
+  if(desg->mem){
+    node = new_unary(ND_MEMBER, node, desg->mem->tok);
+    node->member = desg->mem;
+    return node;
+  }
+  */
+
+  node = new_add(node, new_num(desg->index));
+  return new_unary(ND_DEREF, node);
+} //new_desg_node2()
+
+Node* new_desg_node(Var* var, Designator* desg, Node* rhs) {
+  Node* lhs = new_desg_node2(var, desg);
+  Node* node = new_binary(ND_ASSIGN, lhs, rhs);
+  add_type(node);
+  Node* ret = new_expr(ND_EXPR_STMT, node);
+  add_type(ret);
+  return ret;
+} //new_desg_node()
+
+Node* lvar_init_zero(Node* cur, Var* var, Type* ty, Designator* desg) {
+  if (ty->kind == TY_ARRAY) {
+    for (int i = 0; i < ty->array_size; i++) {
+      Designator desg2 = {desg, i++};
+      cur = lvar_init_zero(cur, var, ty->base, &desg2);
+    }
+    return cur;
+  }
+
+  cur->next = new_desg_node(var, desg, new_num(0));
+  return cur->next;
+} //lvar_init_zero()
+
+Node* lvar_initializer2(Node* cur, Var* lvar, Type* type, Designator* desg){
+
+  Token* tok = token;
+  
+  if(type->kind == TY_ARRAY && type->base->kind == TY_CHAR
+     && token->kind == TK_STR){
+    //in case of char a[]="hoge";
+    token = token->next;
+
+    if(type->is_incomplete){
+      type->size = tok->str_len;
+      type->array_size = tok->str_len;
+      type->is_incomplete = false;
+    } //if
+
+    //compare array_size with string_length
+    int len = (type->array_size < tok->str_len)
+      ? type->array_size : tok->str_len;
+
+    int i = 0;
+    for(i; i < len; i++){
+      Designator desg2 = {desg, i};
+      Node *rhs = new_num(tok->strings[i]);
+      cur->next = new_desg_node(lvar, &desg2, rhs);
+      cur = cur->next;
+    } //for
+
+    //initialize zero
+    for (int i = len; i < type->array_size; i++) {
+      Designator desg2 = {desg, i};
+      cur = lvar_init_zero(cur, lvar, type->base, &desg2);
+    }
+    return cur;
+  } //if TY_ARRAY && TY_CHAR && TK_STR
+
+  if(type->kind == TY_ARRAY){
+    bool open = consume("{");
+    int i = 0;
+    int limit = type->is_incomplete ? INT_MAX : type->array_size;
+
+    if (!peek("}")) {
+      do {
+        Designator desg2 = {desg, i++};
+        cur = lvar_initializer2(cur, lvar, type->base, &desg2);
+      } while (i < limit && !peek_end() && consume(","));
+    }
+
+    if (open && !consume_end()){
+      skip_excess_elements();
+    }
+
+    // Set array elements which is not initialized to zero.
+    while (i < type->array_size) {
+      Designator desg2 = {desg, i++};
+      cur = lvar_init_zero(cur, lvar, type->base, &desg2);
+    }
+
+    if (type->is_incomplete) {
+      type->size = type->base->size * i;
+      type->array_size = i;
+      type->is_incomplete = false;
+    }
+    return cur;
+  } //if(type->kind == TY_ARRAY)
+
+  bool open = consume("{");
+  cur->next = new_desg_node(lvar, desg, assign());
+  if (open){
+    expect_end();
+  }
+  return cur->next;
+  
+} //lvar_initializer2()
+
+Node* lvar_initializer(Var* lvar){
+
+  Node head = {};
+  lvar_initializer2(&head, lvar, lvar->type, NULL);
+
+  Node* node = new_node(ND_BLOCK);
+  node->body = head.next;
+  return node;
+} //lvar_initializer()
+
+
+//declaration = basetype ident type_suffix ("=" lvar_initializer)? ";"
 Node* declaration(){
   Token* tok = token;
   Type* type = basetype();
@@ -419,12 +543,21 @@ Node* declaration(){
   if(type->kind == TY_VOID){
     error_tok(tok, "variable declared void");
   }
-  
-  expect(";");
 
-  Var* lvar = new_lvar(/*tok*/name, type);
-  return new_node(ND_NULL); //変数宣言では、コード生成はしない
-    
+  Var* lvar = new_lvar(name, type);
+  
+  if(consume(";")){
+    if(type->is_incomplete){
+      error_tok(tok, "incomplete type");
+    }
+    return new_node(ND_NULL); //変数宣言では、コード生成はしない
+  } //if
+
+  expect("=");
+  Node* node = lvar_initializer(lvar);
+  expect(";");
+  return node; 
+  
 } //declaration()
 
 

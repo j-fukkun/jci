@@ -52,11 +52,17 @@ void error_at(char* loc, const char* fmt, ...){
 }
 
 // Reports an error location and exit.
-void error_tok(Token *tok, char *fmt, ...) {
+void error_tok(Token* tok, char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   verror_at(tok->str, fmt, ap);
   exit(1);
+}
+
+void warn_tok(Token* tok, char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  verror_at(tok->str, fmt, ap);
 }
 
 
@@ -98,7 +104,7 @@ void expect(const char* op){
       || strlen(op) != token->len
       || memcmp(token->str, op, token->len)){
     char msg[] = "expected '%c'";
-    error_at(token->str, msg, op);
+    error_tok(token, msg, op);
   }
   token = token->next;
 } //expect()
@@ -108,7 +114,7 @@ void expect(const char* op){
 const int expect_number(){
   if (token->kind != TK_NUM){
     char msg[] = "expected a number";
-    error_at(token->str, msg);
+    error_tok(token, msg);
   }
   int val = token->val;
   token = token->next;
@@ -118,7 +124,7 @@ const int expect_number(){
 char* expect_ident(){
   if(token->kind != TK_IDENT){
     char msg[] = "expected an identifier";
-    error_at(token->str, msg);
+    error_tok(token, msg);
   } //if
   char* s = strndup(token->str, token->len);
   //Token* t = token;

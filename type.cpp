@@ -9,7 +9,9 @@ Type* void_type = new Type(TY_VOID, 1, 1);
 
 bool is_integer(Type* t){
   TypeKind k = t->kind;
-  return k == TY_INT || k == TY_CHAR;
+  return k == TY_INT
+    || k == TY_CHAR;
+
 } //is_integer()
 
 Type* new_type(TypeKind kind, int size, int align){
@@ -84,7 +86,6 @@ void add_type(Node *node) {
     node->type = node->var->type;
     return;
   case ND_ADDR: //address &
-    //node->type = pointer_to(node->lhs->type);
     if(node->lhs->type->kind == TY_ARRAY){
       node->type = pointer_to(node->lhs->type->base);
     } else {
@@ -97,11 +98,19 @@ void add_type(Node *node) {
     } //if
 
     Type* t = node->lhs->type->base;
+    if(t->kind == TY_VOID){
+      error("dereference a  void pointer");
+    }
+    
     node->type = t;    
     return;
   }
   case ND_STMT_EXPR: {
     node->type = node->expr->type;
+    for(auto iter = node->stmt.begin(), end = node->stmt.end();
+	iter != end; ++iter){
+      add_type(*iter);
+    }
     return;
   }
   case ND_EXPR_STMT: {

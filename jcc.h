@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <string>
 #include <cassert>
+#include <climits>
 
 //
 //Tokenizer
@@ -50,7 +51,8 @@ extern char* filename;
 
 void error(char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
-void error_tok(Token *tok, char *fmt, ...);
+void error_tok(Token* tok, char* fmt, ...);
+void warn_tok(Token* tok, char* fmt, ...);
 bool consume(const char* op);
 Token* consume_ident();
 Token* consume_str();
@@ -104,6 +106,7 @@ enum NodeKind{
 };
 
 struct Type;
+struct Initializer;
 
 //type for variable
 struct Var{
@@ -117,6 +120,8 @@ struct Var{
 
   //for global variable
   char* literal; //string literal
+
+  Initializer* initializer;
 };
 
 // AST node type
@@ -150,6 +155,14 @@ struct Node{
   std::vector<Node*> stmt;
 };
 
+struct Initializer{
+  Initializer* next;
+
+  //constant expression
+  int size;
+  int val;
+};
+
 class BasicBlock;
 class Function{
  public:
@@ -175,8 +188,10 @@ extern Type* char_type;
 extern Type* void_type;
 
 enum TypeKind{
-  TY_INT,
-  TY_CHAR,
+  TY_INT, //4 byte
+  TY_CHAR, //1 byte
+  TY_SHORT,  //2 byte
+  TY_LONG, //8 byte
   TY_VOID,
   TY_PTR,
   TY_ARRAY,
@@ -189,11 +204,14 @@ class Type{
   int align;
   Type* base;    //pointer
   int array_size; //size of array
+  bool is_incomplete; //index is omitted?
 
   Type(){}
   //Type(TypeKind k){kind = k;}
   Type(TypeKind k, int sz, int ali)
-    {kind = k; size = sz; align = ali; base = nullptr;}
+    {kind = k; size = sz; align = ali; base = nullptr;
+      is_incomplete = false;
+    }
   ~Type(){}
 };
 

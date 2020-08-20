@@ -50,6 +50,12 @@ void test_void(void){
 
 int gvar1;
 char gvar2;
+int gvar3 = 10;
+int gvar4[3] = {1,2,3};
+int gvar5[5] = {1,2,3};
+int gvar6[3] = {1,2,3,4,5};
+char gvar7[] = "Hello, ";
+char gvar8[] = "Compiler World!!";
 
 
 int main(){
@@ -171,6 +177,12 @@ int main(){
 
   test_void();
   printf("test_void is OK\n");
+
+  assert(10, gvar3, "gvar3");
+  assert(3, gvar4[2], "gvar4[2]");
+  assert(3, gvar5[2], "gvar5[2]");
+  assert(2, gvar6[1], "gvar6[1]");
+  printf("%s%s\n", gvar7, gvar8);
   
   printf("OK.\n");
   return 0;

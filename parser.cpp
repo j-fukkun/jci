@@ -721,14 +721,33 @@ Node *expr(){
   return assign();
 } //expr()
 
-//assign = equality ("=" assign)?
+//assign = logor ("=" assign)?
 Node* assign(){
-  Node* node = equality();
+  //Node* node = equality();
+  Node* node = logor();
   if(consume(std::string("=").c_str())){
     node = new_binary(ND_ASSIGN, node, assign());
   } //if
   return node;
 } //assign()
+
+//logor = logand ("||" logand)*
+Node* logor(){
+  Node* node = logand();
+  while(consume("||")){
+    node = new_binary(ND_LOGOR, node, logand());
+  }  //while
+  return node;
+} //logor()
+
+//logand = equality ("&&" equality)*
+Node* logand(){
+  Node* node = equality();
+  while(consume("&&")){
+    node = new_binary(ND_LOGAND, node, equality());
+  }  //while
+  return node;
+} //logand()
 
 //equality = relatinal ("==" relational | "!=" relational)*
 Node* equality(){

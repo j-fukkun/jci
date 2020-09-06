@@ -59,7 +59,7 @@ IR* jmp(BasicBlock* bb){
 IR* jmp_arg(BasicBlock* bb, Reg* r){
   IR* ir = new_ir(IR_JMP);
   ir->bb1 = bb;
-  //ir->bbarg = r;
+  ir->bbarg = r;
   return ir;
 } //jmp_arg()
 
@@ -127,6 +127,50 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_LT, node);
   case ND_LE:
     return gen_binop_IR(IR_LE, node);
+  case ND_LOGOR: {
+    BasicBlock* bb = new_bb();
+    BasicBlock* set0 = new_bb();
+    BasicBlock* set1 = new_bb();
+    BasicBlock* last = new_bb();
+
+    Reg* r1 = gen_expr_IR(node->lhs);
+    br(r1, set1, bb);
+
+    out = bb;
+    Reg* r2 = gen_expr_IR(node->rhs);
+    br(r2, set1, set0);
+
+    out = set0;
+    jmp_arg(last, new_imm(0));
+
+    out = set1;
+    jmp_arg(last, new_imm(1));
+
+    out = last;
+    out->param = new_reg();
+    return out->param;
+  } //ND_LOGOR
+  case ND_LOGAND: {
+    BasicBlock* bb = new_bb();
+    BasicBlock* set0 = new_bb();
+    BasicBlock* set1 = new_bb();
+    BasicBlock* last = new_bb();
+
+    br(gen_expr_IR(node->lhs), bb, set0);
+
+    out = bb;
+    br(gen_expr_IR(node->rhs), set1, set0);
+
+    out = set0;
+    jmp_arg(last, new_imm(0));
+
+    out = set1;
+    jmp_arg(last, new_imm(1));
+
+    out = last;
+    out->param = new_reg();
+    return out->param;
+  } //ND_LOGAND
   case ND_PRE_INC:{
     //++i --> i = i + 1
     Node* n = new_node(ND_ASSIGN);
@@ -338,4 +382,69 @@ void gen_IR(Program* prog){
   } //for fn
   
 } //gen_IR()
+
+//
+//IR dump
+//
+void dump_IR(Program* prog){
+
+  Function* fn= prog->fns;
+  for(fn; fn; fn = fn->next){
+    printf("%s:\n", fn->name);
+    for(auto iter = fn->bbs.begin(), end = fn->bbs.end(); iter != end; ++iter){
+      printf("BB_%d:\n", (*iter)->label);
+      for(auto it_inst = (*iter)->instructions.begin(), end_inst = (*iter)->instructions.end(); it_inst != end_inst; ++it_inst){
+	IR* ir = *it_inst;
+	//const int d = ir->d->vn;
+	//const int a = ir->a->vn;
+	//const int b = ir->b->vn;
+	
+	switch(ir->opcode){
+	case IR_IMM:
+	  printf("v%d = %d\n", ir->d->vn, ir->imm);
+	  break;
+	case IR_MOV:
+	  printf("v%d = v%d\n", ir->d->vn, ir->b->vn);
+	  //printf("MOV\n");
+	  break;
+	case IR_ADD:
+	  printf("v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  //printf("ADD\n");
+	  break;
+	case IR_SUB:
+	  printf("v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  //printf("SUB\n");
+	  break;
+	case IR_MUL:
+	  printf("v%d = v%d * v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  //printf("MUL\n");
+	  break;
+	case IR_DIV:
+	  printf("v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  //printf("DIV\n");
+	  break;
+	case IR_LVAR:
+	  printf("Load v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
+	  break;
+	case IR_STORE:
+	  printf("Store [v%d] v%d\n", ir->a->vn, ir->b->vn);
+	  break;
+	case IR_LOAD:
+	  printf("Load v%d [v%d]\n", ir->d->vn, ir->b->vn);
+	  break;
+	case IR_RETURN:
+	  if(ir->a != nullptr){
+	    printf("RETURN v%d\n", ir->a->vn);
+	  } else {
+	    printf("RETURN\n");
+	  }
+	  break;
+	default:
+	  break;
+	} //switch
+      } //for it_inst
+    } //for iter
+  } //for fn
+  
+} //dump_IR()
 

@@ -45,7 +45,14 @@ const std::vector<Reg*> collect_reg(Function* fn){
   int ic = 1; //instruction count
   
   for(auto iter = fn->bbs.begin(), end = fn->bbs.end(); iter != end; ++iter){
-    for(auto it_inst = (*iter)->instructions.begin(), end_inst = (*iter)->instructions.end(); it_inst != end_inst; ++it_inst){
+    BasicBlock* bb = *iter;
+    if(bb->param){
+      bb->param->def = ic;
+      vec.push_back(bb->param);
+      ic++;
+    } //if
+    
+    for(auto it_inst = bb->instructions.begin(), end_inst = bb->instructions.end(); it_inst != end_inst; ++it_inst){
       IR* ir = *it_inst;
       if((ir->d != nullptr) && !ir->d->def){
 	ir->d->def = ic;
@@ -54,6 +61,7 @@ const std::vector<Reg*> collect_reg(Function* fn){
 
       set_last_use(ir->a, ic);
       set_last_use(ir->b, ic);
+      set_last_use(ir->bbarg, ic);
 
       if(ir->opcode == IR_FUNCALL){
         for(int i = 0; i < ir->num_args; i++){
@@ -142,7 +150,7 @@ void emit_spill_code(BasicBlock* bb) {
 
     spill_load(inst_list, ir, ir->a);
     spill_load(inst_list, ir, ir->b);
-    //spill_load(inst_list, ir, ir->bbarg);
+    spill_load(inst_list, ir, ir->bbarg);
     inst_list.push_back(ir);
     spill_store(inst_list, ir);
   }

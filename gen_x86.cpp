@@ -24,7 +24,8 @@ void print_cmp(const std::string inst, const IR* ir){
 } //print_cmp()
 
 const std::string reg(const int r, const int size){
-  
+  fflush(stdout);
+  assert(r >= 0);
   if(size == 1){
     return regs8[r];
   }
@@ -159,11 +160,9 @@ void gen(const IR* ir){
     printf("  jmp .L%d\n", ir->bb2->label);
     break;
   case IR_JMP:
-    /*
     if (ir->bbarg){
-      printf("  mov %s, %s", regs[ir->bb1->param->rn], regs[ir->bbarg->rn]);
+      printf("  mov %s, %s\n", regs[ir->bb1->param->rn].c_str(), regs[ir->bbarg->rn].c_str());
     } //if
-    */
     printf("  jmp .L%d\n", ir->bb1->label);
     break;
   case IR_FUNCALL:

@@ -102,6 +102,8 @@ enum NodeKind{
   ND_POST_DEC, //a--
   ND_STMT_EXPR, //stmt ...
   ND_EXPR_STMT, //expr ...
+  ND_LOGOR, //||
+  ND_LOGAND, //&&
   ND_NULL,
 };
 
@@ -245,6 +247,8 @@ Node* stmt();
 Node* stmt2();
 Node* expr();
 Node* assign();
+Node* logor();
+Node* logand();
 Node* equality();
 Node* relational();
 Node* new_add(Node* lhs, Node* rhs);
@@ -312,6 +316,8 @@ class BasicBlock{
   // For liveness analysis
   std::list<BasicBlock*> succ;
   std::list<BasicBlock*> pred;
+
+  Reg* param;
 };
 
 class IR{
@@ -327,7 +333,7 @@ class IR{
 
   BasicBlock* bb1;
   BasicBlock* bb2;
-  //Reg* bbarg;
+  Reg* bbarg;
 
   char* funcname; //function name
   Reg* args[6]; //arguments
@@ -345,7 +351,7 @@ IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b);
 Reg* gen_binop_IR(const IRKind op, Node* node);
 Reg* gen_expr_IR(Node* node);
 void gen_IR(Program* prog);
-
+void dump_IR(Program* prog);
 
 //
 //register allocator

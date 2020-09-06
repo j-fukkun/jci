@@ -11,6 +11,7 @@ int assert(int expected, int actual, char* code) {
   }
 }
 
+
 int ret3() {
   return 3;
   return 5;
@@ -56,7 +57,7 @@ int gvar5[5] = {1,2,3};
 int gvar6[3] = {1,2,3,4,5};
 char gvar7[] = "Hello, ";
 char gvar8[] = "Compiler World!!";
-
+int gvar9[][3] = {{1,2,3}, {4,5,6}, {7,8,9}};
 
 int main(){
   
@@ -195,7 +196,16 @@ int main(){
 
   char str2[] = "Local Initializer Test";
   printf("%s\n", str2);
+
+  int arr4[2][3] = {{1,2,3}, {4,5,6}};
+  assert(5, arr4[1][1], "arr4[1][1]");
+  assert(7, gvar9[2][0], "gvar9[2][0]");
   
+  int lvar1 = 1;
+  int lvar2 = 0;
+  int lvar3 = lvar1 || lvar2;
+  assert(1, lvar3, "lvar1 || lvar2");
+  assert(0, lvar1 && lvar2, "lvar1 && lvar2");
   
   printf("OK.\n");
   return 0;

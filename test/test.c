@@ -206,6 +206,13 @@ int main(){
   int lvar3 = lvar1 || lvar2;
   assert(1, lvar3, "lvar1 || lvar2");
   assert(0, lvar1 && lvar2, "lvar1 && lvar2");
+
+  lvar1 = 8;
+  lvar1 = lvar1 << 2;
+  assert(32, lvar1, "lvar1 << 2");
+
+  lvar1 = lvar1 >> 1;
+  assert(16, lvar1, "lvar1 >> 1");
   
   printf("OK.\n");
   return 0;

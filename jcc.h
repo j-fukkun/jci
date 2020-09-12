@@ -104,6 +104,8 @@ enum NodeKind{
   ND_EXPR_STMT, //expr ...
   ND_LOGOR, //||
   ND_LOGAND, //&&
+  ND_SHL, //<< left shift
+  ND_SHR, //>> right shift
   ND_NULL,
 };
 
@@ -251,6 +253,7 @@ Node* logor();
 Node* logand();
 Node* equality();
 Node* relational();
+Node* shift();
 Node* new_add(Node* lhs, Node* rhs);
 Node* new_sub(Node* lhs, Node* rhs);
 Node* add();
@@ -293,6 +296,9 @@ enum IRKind{
   IR_PTR_SUB, //pointer sub
   IR_PTR_DIFF, //pointer difference
   IR_LABEL_ADDR, //global variable
+  IR_SHL, //<< left shift
+  IR_SHR, //>> right shift
+  
 };
 
 class Reg{

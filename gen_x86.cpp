@@ -125,6 +125,14 @@ void gen(const IR* ir){
   case IR_LE:
     print_cmp(std::string("setle"), ir);
     break;
+  case IR_SHL:
+    printf("  mov cl, %s\n", regs8[b].c_str());
+    printf("  shl %s, cl\n", regs[d].c_str());
+    break;
+  case IR_SHR:
+    printf("  mov cl, %s\n", regs8[b].c_str());
+    printf("  shr %s, cl\n", regs[d].c_str());
+    break;
   case IR_LVAR:
     printf("  lea %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
     break;

@@ -764,25 +764,45 @@ Node* equality(){
   } //for
 } //equality()
 
-//relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+
+//relational = shift ("<" shift | "<=" shift | ">" shift | ">=" shift)*
 Node* relational(){
-  Node* node = add();
+  Node* node = shift();
 
   for(;;){
-    if(consume(std::string("<").c_str())){
-      node = new_binary(ND_LT, node, add());
-    } else if(consume(std::string("<=").c_str())){
-      node = new_binary(ND_LE, node, add());
-    } else if(consume(std::string(">").c_str())){
-      node = new_binary(ND_LT, add(), node);
-    } else if(consume(std::string(">=").c_str())){
-      node = new_binary(ND_LE, add(), node);
+    if(consume("<")){
+      node = new_binary(ND_LT, node, shift());
+    } else if(consume("<=")){
+      node = new_binary(ND_LE, node, shift());
+    } else if(consume(">")){
+      node = new_binary(ND_LT, shift(), node);
+    } else if(consume(">=")){
+      node = new_binary(ND_LE, shift(), node);
     } else {
       return node;
     }
   } //for
   
 } //relational()
+
+// shift = add ("<<" add | ">>" add)*
+Node* shift(){
+  Node* node = add();
+  Token* tok;
+
+  for(;;){
+    if(consume("<<")){
+      node = new_binary(ND_SHL, node, add());
+    }
+    else if(consume(">>")){
+      node = new_binary(ND_SHR, node, add());
+    }
+    else{
+      return node;
+    }
+  } //for
+  
+} //shift()
 
 Node* new_add(Node* lhs, Node* rhs){
   add_type(lhs);

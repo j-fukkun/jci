@@ -98,8 +98,8 @@ enum NodeKind{
   ND_PTR_DIFF, //pointer difference
   ND_PRE_INC, //++a
   ND_PRE_DEC, //--a
-  ND_POST_INC, //a++
-  ND_POST_DEC, //a--
+  //ND_POST_INC, //a++
+  //ND_POST_DEC, //a--
   ND_STMT_EXPR, //stmt ...
   ND_EXPR_STMT, //expr ...
   ND_LOGOR, //||

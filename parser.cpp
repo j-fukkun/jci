@@ -14,6 +14,18 @@ Var* find_lvar(Token* tok){
   return NULL;
 } //find_lvar()
 
+/*
+Var* add_lvar(Type* type, char* name){
+  Var* var = (Var*)calloc(1, sizeof(Var));
+  var->type = type;
+  var->is_local = true;
+  var->name = name;
+  lvar->next = locals;
+  locals = lvar;
+  return lvar;
+} //add_lvar()
+*/
+
 Var* find_gvar(Token* tok){
   Var* var = globals;
   for(var; var; var = var->next){
@@ -57,7 +69,8 @@ Node* new_var_node(Var* v){
   Node* node = new_node(ND_VAR);
   node->var = v;
   return node;
-}
+} //new_var_node()
+
 
 //ローカル変数のnew
 Var* new_lvar(char* name, Type* type){
@@ -82,6 +95,30 @@ Node* new_expr(const NodeKind kind, Node* e){
   node->expr = e;
   return node;
 } //new_expr()
+
+Node* new_deref(Var* var){
+  return new_unary(ND_DEREF, new_var_node(var));
+} //new_deref()
+
+Node* new_stmt_expr(/*const*/ std::vector<Node*>/*&*/ vec){
+  Node* last = vec.back();
+  vec.pop_back();
+  
+  std::vector<Node*> v;
+
+  for(auto iter = vec.begin(), end = vec.end(); iter != end; ++iter){
+    Node* n = new_expr(ND_EXPR_STMT, *iter);
+    add_type(n);
+    v.push_back(n);
+  } //for
+
+  Node* node = new_node(ND_STMT_EXPR);
+  node->stmt = v;
+  node->expr = last;
+  add_type(node);
+  return node;
+
+} //new_stmt_expr()
 
 Initializer* new_init_val(Initializer* cur, const int sz, const int val){
   Initializer* init = (Initializer*)calloc(1, sizeof(Initializer));
@@ -721,13 +758,67 @@ Node *expr(){
   return assign();
 } //expr()
 
-//assign = logor ("=" assign)?
+
+//a op= b; --> {T* t = &a; *t = *t op b;}
+Node* new_assign_eq(NodeKind k, Node* lhs, Node* rhs){
+  add_type(lhs);
+  add_type(rhs);
+  std::vector<Node*> v;
+
+  //T* t = &a;
+  Var* var = new_lvar("tmp", pointer_to(lhs->type));
+  Node* node = new_binary(ND_ASSIGN, new_var_node(var), new_unary(ND_ADDR, lhs));
+  add_type(node);
+  v.push_back(node);
+  
+  //*t = *t op b;
+  node = new_binary(ND_ASSIGN,
+		    new_deref(var),
+		    new_binary(k, new_deref(var), rhs)
+		    );
+  add_type(node);
+  v.push_back(node);
+
+  return new_stmt_expr(v);
+
+} //new_assign_eq()
+
+
+//assign = logor (assign-op assign)?
+//assign-op = "=" | "+=" | "-=" | "*=" | "/=" 
 Node* assign(){
   //Node* node = equality();
   Node* node = logor();
-  if(consume(std::string("=").c_str())){
-    node = new_binary(ND_ASSIGN, node, assign());
+  if(consume("=")){
+    return new_binary(ND_ASSIGN, node, assign());
   } //if
+
+  if(consume("+=")){
+    add_type(node);
+    if(node->type->base){
+      return new_assign_eq(ND_PTR_ADD, node, assign());
+    } else {
+      return new_assign_eq(ND_ADD, node, assign());
+    }
+  } //if +=
+
+  if(consume("-=")){
+    add_type(node);
+    if(node->type->base){
+      return new_assign_eq(ND_PTR_SUB, node, assign());
+    } else {
+      return new_assign_eq(ND_SUB, node, assign());
+    }
+  } //if -=
+
+  if(consume("*=")){
+    return new_assign_eq(ND_MUL, node, assign());
+  }
+
+  if(consume("/=")){
+    return new_assign_eq(ND_DIV, node, assign());
+  }
+  
   return node;
 } //assign()
 
@@ -921,42 +1012,30 @@ Node* unary(){
 
 } //urary()
 
-Node* new_stmt_expr(const std::vector<Node*>& vec){
-  Node* last = *(--vec.end());
-  
-  std::vector<Node*> v;
 
-  for(auto iter = vec.begin(), end = vec.end(); iter != end; ++iter){
-    Node* n = new_expr(ND_EXPR_STMT, *iter);
-    add_type(n);
-    v.push_back(n);
-  } //for
-
-  Node* node = new_node(ND_STMT_EXPR);
-  node->stmt = v;
-  node->expr = last;
-  add_type(node);
-  return node;
-
-} //new_stmt_expr()
-
-//i++ --> t = i; i=i+1; t;
+//i++ --> {T* t = &i; T t2 = *t; *t = *t + imm; t2;}
 Node* new_post_inc(Node* n, const int imm){
   add_type(n);
-  
+
   std::vector<Node*> vec;
-  Var* t = new_lvar("tmp", n->type);
+  Var* t = new_lvar("tmp", pointer_to(n->type));
+  Var* t2 = new_lvar("tmp2", n->type);
+
+  //T* t = &i;
+  vec.push_back(new_binary(ND_ASSIGN, new_var_node(t), new_unary(ND_ADDR, n)));
+
+  //T t2 = *t;
+  vec.push_back(new_binary(ND_ASSIGN, new_var_node(t2), new_deref(t)));
+  
+  //*t = *t + imm;
   vec.push_back(new_binary(ND_ASSIGN,
-			   new_var_node(t),
-			   n));
-  vec.push_back(new_binary(ND_ASSIGN,
-			   n,
-			   new_add(n, new_num(imm))
+			   new_deref(t),
+			   new_add(new_deref(t), new_num(imm))
 			   )
 		);
-  Node* node_t = new_var_node(t);
-  add_type(node_t);
-  vec.push_back(node_t);
+
+  //t2;
+  vec.push_back(new_var_node(t2));
   return new_stmt_expr(vec);
   
 } //new_post_inc()

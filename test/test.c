@@ -214,6 +214,26 @@ int main(){
   lvar1 = lvar1 >> 1;
   assert(16, lvar1, "lvar1 >> 1");
   
+  int lvar4 = 10;
+  lvar4 += 5;
+  assert(15, lvar4, "lvar4 += 5");
+
+  lvar4 -= 3;
+  assert(12, lvar4, "lvar4 -= 3");
+
+  lvar4 *= 4;
+  assert(48, lvar4, "lvar4 *= 48");
+
+  lvar4 /= 2;
+  assert(24, lvar4, "lvar4 /= 2");
+
+  int* lvar_p = arr3;
+  lvar_p += 3;
+  assert(4, *lvar_p, "lvar_p = arr3; lvar_p += 3; *lvar_p;");
+
+  lvar_p -= 2;
+  assert(2, *lvar_p, "lvar_p = arr3; lvar_p -= 2; *lvar_p;");
+  
   printf("OK.\n");
   return 0;
 }

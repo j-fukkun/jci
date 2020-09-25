@@ -191,6 +191,7 @@ Reg* gen_expr_IR(Node* node){
     add_type(n);
     return gen_expr_IR(n);
   } //ND_PRE_DEC
+    /*
   case ND_POST_INC:{
     //i++ --> t = i; i = i + 1; t;
     Node* n = new_node(ND_ASSIGN);
@@ -200,6 +201,7 @@ Reg* gen_expr_IR(Node* node){
   case ND_POST_DEC:{
 
   } //ND_POST_DEC
+    */
   case ND_VAR: {
     //配列はアドレスを計算するだけで良い
     if(node->type->kind != TY_ARRAY){

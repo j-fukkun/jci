@@ -1,1 +1,1 @@
-this is my compiler infrastructure.
+This is my tiny C compiler, jcc.

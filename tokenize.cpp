@@ -3,7 +3,7 @@
 
 /*エラーを報告するための関数*/
 /*prnitfと同じ引数を取る*/
-void error(char* fmt, ...){
+void error(const char* fmt, ...){
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);
@@ -52,14 +52,14 @@ void error_at(char* loc, const char* fmt, ...){
 }
 
 // Reports an error location and exit.
-void error_tok(Token* tok, char* fmt, ...) {
+void error_tok(Token* tok, const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   verror_at(tok->str, fmt, ap);
   exit(1);
 }
 
-void warn_tok(Token* tok, char* fmt, ...) {
+void warn_tok(Token* tok, const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   verror_at(tok->str, fmt, ap);

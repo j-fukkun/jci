@@ -49,10 +49,10 @@ extern Token* token;
 //input filename
 extern char* filename;
 
-void error(char* fmt, ...);
+void error(const char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
-void error_tok(Token* tok, char* fmt, ...);
-void warn_tok(Token* tok, char* fmt, ...);
+void error_tok(Token* tok, const char* fmt, ...);
+void warn_tok(Token* tok, const char* fmt, ...);
 bool consume(const char* op);
 Token* consume_ident();
 Token* consume_str();
@@ -115,7 +115,7 @@ struct Initializer;
 //type for variable
 struct Var{
   Var* next; //次の変数 or NULL
-  char* name; //変数の名前
+  const char* name; //変数の名前
   int len; //変数名の長さ
   int offset; //RBPからのオフセット for local variable
   Type* type;
@@ -335,7 +335,7 @@ class IR{
 
   int imm; //immediate value
   Var* lvar;
-  char* name; //global var name
+  const char* name; //global var name
 
   BasicBlock* bb1;
   BasicBlock* bb2;

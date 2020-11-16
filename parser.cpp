@@ -56,7 +56,7 @@ Node* new_num(const int val){
   return node;
 }
 
-Var* new_var(char* name, Type* type, bool is_local){
+Var* new_var(const char* name, Type* type, const bool is_local){
   Var* var = (Var*)calloc(1, sizeof(Var));
   var->name = name;
   var->len = strlen(name);
@@ -73,7 +73,7 @@ Node* new_var_node(Var* v){
 
 
 //ローカル変数のnew
-Var* new_lvar(char* name, Type* type){
+Var* new_lvar(const char* name, Type* type){
   Var* lvar = new_var(name, type, true);
   lvar->next = locals;
   locals = lvar;

@@ -53,7 +53,7 @@ void error(const char* fmt, ...);
 void error_at(char* loc, const char* fmt, ...);
 void error_tok(Token* tok, const char* fmt, ...);
 void warn_tok(Token* tok, const char* fmt, ...);
-bool consume(const char* op);
+Token* consume(const char* op);
 Token* consume_ident();
 Token* consume_str();
 void expect(const char* op);
@@ -106,6 +106,7 @@ enum NodeKind{
   ND_LOGAND, //&&
   ND_SHL, //<< left shift
   ND_SHR, //>> right shift
+  ND_MEMBER, //. struct member access
   ND_NULL,
 };
 
@@ -127,6 +128,8 @@ struct Var{
 
   Initializer* initializer;
 };
+
+struct Member;
 
 // AST node type
 //typedef struct Node Node;
@@ -157,6 +160,8 @@ struct Node{
 
   Node* expr;
   std::vector<Node*> stmt;
+
+  Member* member; //struct member
 };
 
 struct Initializer{
@@ -204,6 +209,7 @@ enum TypeKind{
   TY_VOID,
   TY_PTR,
   TY_ARRAY,
+  TY_STRUCT,
 };
 
 class Type{
@@ -214,6 +220,7 @@ class Type{
   Type* base;    //pointer
   int array_size; //size of array
   bool is_incomplete; //index is omitted?
+  Member* members; //struct
 
   Type(){}
   //Type(TypeKind k){kind = k;}
@@ -224,10 +231,19 @@ class Type{
   ~Type(){}
 };
 
+struct Member{
+  Member* next;
+  Type* type;
+  Token* tok; //for error
+  char* name;
+  int offset;
+};
+
 bool is_integer(Type* t);
 Type* pointer_to(Type* base);
 Type* array_of(Type* base, int size);
 const int align_to(const int n, const int align);
+Type* struct_type();
 void add_type(Node* node);
 
 
@@ -239,6 +255,8 @@ Var* find_lvar(Token* tok);
 Node* new_node(const NodeKind kind);
 Node* new_binary(const NodeKind kind, Node* lhs, Node* rhs);
 Node* new_num(const int val);
+
+Type* struct_decl();
 
 Program* program();
 Function* function();

@@ -49,6 +49,12 @@ void test_void(void){
   return;
 }
 
+struct TEST_G {
+  int x;
+  int y;
+} t_g;
+
+
 int gvar1;
 char gvar2;
 int gvar3 = 10;
@@ -233,6 +239,20 @@ int main(){
 
   lvar_p -= 2;
   assert(2, *lvar_p, "lvar_p = arr3; lvar_p -= 2; *lvar_p;");
+
+  struct TEST {
+    int x;
+    int y;
+  } t;
+  t.x = 1;
+  t.y = 2;
+  assert(1, t.x, "t.x = 1;");
+  assert(2, t.y, "t.y = 2;");
+
+  t_g.x = 3;
+  t_g.y = 4;
+  assert(3, t_g.x, "t_g.x = 3;");
+  assert(4, t_g.y, "t_g.y = 4;");
   
   printf("OK.\n");
   return 0;

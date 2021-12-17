@@ -182,7 +182,7 @@ void skip_excess_elements() {
 } //skip_excess_elements()
 
 
-//basetype = builtin-type "*"*
+//basetype = (builtin-type | struct-decl) "*"* 
 //builtin-type = "int" | "char" | "void"
 Type* basetype(){
 
@@ -193,6 +193,12 @@ Type* basetype(){
     type = char_type;
   } else if(consume("void")){
     type = void_type;
+  } //if
+
+  if(!peek("int") && !peek("char") && !peek("void")){
+    if(peek("struct")){
+      type = struct_decl();
+    } //if struct
   } //if
   
   while(consume("*")){
@@ -439,7 +445,8 @@ Function* function(){
 
 bool is_typename(){
 
-  return peek("int") || peek("char") || peek("void");
+  return peek("int") || peek("char") || peek("void")
+      || peek("struct");
 
 } //is_typename()
 
@@ -569,10 +576,15 @@ Node* lvar_initializer(Var* lvar){
 
 
 //declaration = basetype ident type_suffix ("=" lvar_initializer)? ";"
+//            | basetype ";"
 Node* declaration(){
   Token* tok = token;
   Type* type = basetype();
-  //Token* tok = expect_ident();
+
+  if(tok = consume(";")){
+    return new_node(ND_NULL);
+  } //if
+  
   char* name = expect_ident();
 
   type = type_suffix(type);
@@ -622,6 +634,77 @@ Type* type_suffix(Type* type){
   type->is_incomplete = is_incomplete;
   return type;
 } //type_suffix()
+
+//struct_member = basetype ident type-suffix ";"
+Member* struct_member(){
+  
+  Type* type = basetype();
+  Token* tok = token;
+  char* name = NULL;
+  //type = declarator(type, &name);
+  name = expect_ident();
+  type = type_suffix(type);
+  expect(";");
+
+  Member* mem = (Member*)calloc(1, sizeof(Member));
+  mem->name = name;
+  mem->type = type;
+  mem->tok = tok;
+  return mem;
+  
+} //struct_member()
+
+//struct-decl = "struct" ident? ("{" struct-member "}")?
+Type* struct_decl(){
+
+  expect("struct");
+  Token* id = consume_ident();
+  /*
+  if(id && !peek("{")){
+    //process of tag
+  } //if
+  */
+
+  if(!consume("{")){
+    return struct_type(); //incomplete type
+  } //if
+
+  Type* type;
+  
+  //read struct members
+  Member head = {};
+  Member* cur = &head;
+
+  while(!consume("}")){
+    cur->next = struct_member();
+    cur = cur->next;
+  } //while
+
+  type = struct_type();
+  type->members = head.next;
+
+  //assign offsets within the struct to members
+  int offset = 0;
+  for(Member* mem = type->members; mem; mem = mem->next){
+    if(mem->type->is_incomplete){
+      error_tok(mem->tok, "incomplete struct member");
+    } //if
+
+    offset = align_to(offset, mem->type->align);
+    mem->offset = offset;
+    offset += mem->type->size;
+
+    if(type->align < mem->type->align){
+      //type->alignをmemberの最大のalignに設定する
+      type->align = mem->type->align;
+    } //if
+  } //for mem
+
+  type->size = align_to(offset, type->align);
+  type->is_incomplete = false;
+  return type;
+  
+} //struct_decl()
 
 
 const int const_expr(){
@@ -1040,7 +1123,39 @@ Node* new_post_inc(Node* n, const int imm){
   
 } //new_post_inc()
 
-//postfix = primary ("[" expr "]" | "++" | "--")*
+Member* find_member(Type* t, char* name){
+
+  for(Member* mem = t->members; mem; mem = mem->next){
+    if(!strcmp(mem->name, name)){
+      return mem;
+    } //if
+  } //for mem
+
+  return NULL;
+  
+} //find_member()
+
+Node* struct_ref(Node* lhs){
+  
+  add_type(lhs);
+  if(lhs->type->kind != TY_STRUCT){
+    //error_tok(lhs->tok, "this is not a struct");
+    ;
+  } //if
+
+  Token* tok = token;
+  Member* mem = find_member(lhs->type, expect_ident());
+  if(!mem){
+    error_tok(tok, "no such member");
+  } //if
+
+  Node* node = new_unary(ND_MEMBER, lhs);
+  node->member = mem;
+  return node;
+  
+} //struct_ref()
+
+//postfix = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
 Node* postfix(){
 
   Node* node = primary();
@@ -1053,6 +1168,18 @@ Node* postfix(){
       node = new_unary(ND_DEREF, tmp);
       continue;
     } //if "["
+
+    if(consume(".")){
+      node = struct_ref(node);
+      continue;
+    } //if "."
+
+    if(consume("->")){
+      //a->b is (*a).b
+      node = new_unary(ND_DEREF, node);
+      node = struct_ref(node);
+      continue;
+    } //if "->"
 
     if(consume("++")){
       //node = new_unary(ND_POST_INC, node);

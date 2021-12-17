@@ -72,7 +72,15 @@ Reg* gen_lval_IR(Node* node){
   
   if(node->kind == ND_DEREF){
     return gen_expr_IR(node->lhs);
-  }
+  } //if ND_DEREF
+
+  if(node->kind == ND_MEMBER){
+    Reg* r1 = new_reg();
+    Reg* r2 = gen_lval_IR(node->lhs);
+    Reg* r3 = new_imm(node->member->offset);
+    emit_IR(IR_ADD, r1, r2, r3);
+    return r1;
+  } //if ND_MEMBER
   
   assert(node->kind == ND_VAR);
   Var* var = node->var;
@@ -211,6 +219,11 @@ Reg* gen_expr_IR(Node* node){
     }
     return gen_lval_IR(node);
   } //ND_LVAR
+  case ND_MEMBER: {
+    Reg* r = new_reg();
+    load(node, r, gen_lval_IR(node));
+    return r;
+  } //ND_MEMBER
   case ND_ASSIGN: {
     Reg* d = gen_lval_IR(node->lhs);
     Reg* a = gen_expr_IR(node->rhs);
@@ -218,6 +231,7 @@ Reg* gen_expr_IR(Node* node){
     //IR* ir = emit_IR(IR_STORE, d, a, NULL);
     ir->type_size = node->type->size;
     return a;
+    //return d;
   } //ND_ASSIGN
     
   case ND_STMT_EXPR: {

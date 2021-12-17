@@ -36,6 +36,13 @@ const int align_to(const int n, const int align){
   return (n + align - 1) & ~(align -1);
 } //align_to()
 
+Type* struct_type(){
+  Type* t = new_type(TY_STRUCT, 0, 1);
+  t->is_incomplete = true;
+  return t;
+} //struct_type()
+
+
 void add_type(Node *node) {
   if (!node || node->type){
     return;
@@ -88,6 +95,9 @@ void add_type(Node *node) {
     return;
   case ND_VAR:
     node->type = node->var->type;
+    return;
+  case ND_MEMBER:
+    node->type = node->member->type;
     return;
   case ND_ADDR: //address &
     if(node->lhs->type->kind == TY_ARRAY){

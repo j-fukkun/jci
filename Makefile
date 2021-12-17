@@ -10,9 +10,9 @@ jcc: $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 test: jcc 
-	gcc -c test/inc.c -o test/inc.o
+	gcc -no-pie -c test/inc.c -o test/inc.o
 	./jcc test/test.c > test/test.s
-	gcc -o test/test test/inc.o test/test.s
+	gcc -no-pie -o test/test test/inc.o test/test.s
 	test/test
 
 clean:

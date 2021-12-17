@@ -68,15 +68,16 @@ void warn_tok(Token* tok, const char* fmt, ...) {
 
 //次のトークンが期待している記号のときには、トークンを一つ読み進めて
 //真を返す。それ以外の場合は、偽を返す
-bool consume(const char* op){
+Token* consume(const char* op){
   if(token->kind != TK_RESERVED
      || strlen(op) != token->len
      || memcmp(token->str, op, token->len))
     {
-      return false;
+      return NULL;
     }
+  Token* t = token;
   token = token->next;
-  return true;
+  return t;
 } //consume()
 
 Token* consume_ident(){
@@ -173,7 +174,7 @@ const char* startswith_reserved(char* p){
   const char* kw[] = {"return","if","else","while","for",
 		      "int","char","short","long","void",
 		      "break","continue","switch","case","goto",
-		      "default","do","sizeof"};
+		      "default","do","sizeof","struct"};
   int i = 0;
   for(i = 0; i < sizeof(kw) / sizeof(*kw); i++){
     const int len = strlen(kw[i]);
@@ -279,7 +280,7 @@ Token* tokenize(){
 
     //１つの文字を区切る
     //single-letter
-    if (strchr("+-*/()<>;={},&[]", *p)) {
+    if (strchr("+-*/()<>;={},&[].", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     } //if single-letter

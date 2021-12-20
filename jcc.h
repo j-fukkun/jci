@@ -200,6 +200,8 @@ struct Program{
 extern Type* int_type;
 extern Type* char_type;
 extern Type* void_type;
+extern Type* short_type;
+extern Type* long_type;
 
 enum TypeKind{
   TY_INT, //4 byte

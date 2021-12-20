@@ -5,13 +5,17 @@
 Type* int_type = new Type(TY_INT, 4, 4);
 Type* char_type = new Type(TY_CHAR, 1, 1);
 Type* void_type = new Type(TY_VOID, 1, 1);
+Type* short_type = new Type(TY_SHORT, 2, 2);
+Type* long_type = new Type(TY_LONG, 8, 8);
 
 
 bool is_integer(Type* t){
   TypeKind k = t->kind;
   return k == TY_INT
-    || k == TY_CHAR;
-
+    || k == TY_CHAR
+    || k == TY_SHORT
+    || k == TY_LONG
+    ;
 } //is_integer()
 
 Type* new_type(TypeKind kind, int size, int align){

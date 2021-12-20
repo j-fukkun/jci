@@ -52,8 +52,28 @@ void test_void(void){
 struct TEST_G {
   int x;
   int y;
+  short z;
+  long w;
 } t_g;
+/*
+struct TEST_G test_ret_struct(){
+  struct TEST_G t;
+  t.x = 123;
+  t.y = 456;
+  return t;
+}
 
+struct TEST_G test_args_struct(struct TEST_G s){
+  struct TEST_G t;
+  t = s;
+  return t;
+}
+
+void test_pointer_struct(struct TEST_G* s){
+  s->x = 100;
+  s->y = 1000;
+}
+*/
 
 int gvar1;
 char gvar2;
@@ -64,6 +84,8 @@ int gvar6[3] = {1,2,3,4,5};
 char gvar7[] = "Hello, ";
 char gvar8[] = "Compiler World!!";
 int gvar9[][3] = {{1,2,3}, {4,5,6}, {7,8,9}};
+short gvar_short = 1000;
+long gvar_long = 10000;
 
 int main(){
   
@@ -243,6 +265,8 @@ int main(){
   struct TEST {
     int x;
     int y;
+    short z;
+    long w;
   } t;
   t.x = 1;
   t.y = 2;
@@ -253,6 +277,40 @@ int main(){
   t_g.y = 4;
   assert(3, t_g.x, "t_g.x = 3;");
   assert(4, t_g.y, "t_g.y = 4;");
+  
+  /*
+  struct TEST_G t_rs = test_ret_struct();
+  assert(123, t_rs.x, "t_rs.x = 123");
+  assert(456, t_rs.y, "t_rs.y = 456");
+  */
+  /*
+  test_pointer_struct(t_g);
+  assert(100, t_g.x, "t_g.x = 100");
+  assert(1000, t_g.y, "t_g.y = 1000");
+  */
+
+  short lvar_short = 123;
+  short lvar_short2 = lvar_short;
+  long lvar_long = 456;
+  long lvar_long2 = lvar_long;
+  
+  assert(123, lvar_short, "lvar_short = 123");
+  assert(123, lvar_short2, "lvar_short2 = lvar_short");
+  assert(456, lvar_long, "lvar_long = 456");
+  assert(456, lvar_long2, "lvar_long2 = lvar_long");
+  assert(1000, gvar_short, "gvar_short = 1000");
+  assert(10000, gvar_long, "gvar_long = 10000");
+  assert(2, sizeof(lvar_short), "sizeof(lvar_short)");
+  assert(8, sizeof(lvar_long), "sizeof(lvar_long)");
+
+  t_g.z = 16000;
+  t_g.w = 32000;
+  t.z = t_g.z;
+  t.w = t_g.w;
+  assert(16000, t_g.z, "t_g.z = 16000");
+  assert(32000, t_g.w, "t_g.w = 32000");
+  assert(16000, t.z, "t.z = t_g.z");
+  assert(32000, t.w, "t.w = t_g.w");
   
   printf("OK.\n");
   return 0;

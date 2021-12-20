@@ -2,10 +2,12 @@
 
 static const std::string regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"}; //64bit 8byte
 static const std::string regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"}; //8bit 1byte
+static const std::string regs16[] = {"r10w", "r11w", "bx", "r12w", "r13w", "r14w", "r15w"}; //16bit 2byte
 static const std::string regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"}; //32bit 4byte
 
 static const std::string argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"}; //64bit 8byte
 static const std::string argregs8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"}; //8bit 1byte
+static const std::string argregs16[] = {"di", "si", "dx", "cx", "r8w", "r9w"}; //16bit 2byte
 static const std::string argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"}; //32bit 4byte
 
 static unsigned int labelseq = 1;
@@ -30,9 +32,14 @@ const std::string reg(const int r, const int size){
     return regs8[r];
   }
 
+  if(size == 2){
+    return regs16[r];
+  }
+  
   if(size == 4){
     return regs32[r];
   }
+  
   assert(size == 8);
   return regs[r];
   
@@ -44,6 +51,10 @@ const std::string argreg(const int r, const int size){
     return argregs8[r];
   }
 
+  if(size == 2){
+    return argregs16[r];
+  }
+  
   if(size == 4){
     return argregs32[r];
   }
@@ -59,6 +70,8 @@ void load(const IR* ir){
 
   if(size == 1){
     printf("  movsx %s, byte ptr [%s]\n", regs[d].c_str(), regs[b].c_str());
+  } else if(size == 2){
+    printf("  movsx %s, word ptr [%s]\n", regs[d].c_str(), regs[b].c_str());
   } else if(size == 4){
     printf("  movsxd %s, dword ptr [%s]\n", regs[d].c_str(), regs[b].c_str());
   } else {

@@ -183,7 +183,7 @@ void skip_excess_elements() {
 
 
 //basetype = (builtin-type | struct-decl) "*"* 
-//builtin-type = "int" | "char" | "void"
+//builtin-type = "int" | "char" | "short" | "long" | "void"
 Type* basetype(){
 
   Type* type = nullptr;
@@ -191,11 +191,16 @@ Type* basetype(){
     type = int_type;
   } else if(consume("char")){
     type = char_type;
+  } else if(consume("short")){
+    type = short_type;
+  } else if(consume("long")){
+    type = long_type;
   } else if(consume("void")){
     type = void_type;
   } //if
 
-  if(!peek("int") && !peek("char") && !peek("void")){
+  if(!peek("int") && !peek("char") && !peek("void")
+     && !peek("short") && !peek("long")){
     if(peek("struct")){
       type = struct_decl();
     } //if struct
@@ -446,7 +451,9 @@ Function* function(){
 bool is_typename(){
 
   return peek("int") || peek("char") || peek("void")
-      || peek("struct");
+    || peek("short")
+    || peek("long")
+    || peek("struct");
 
 } //is_typename()
 

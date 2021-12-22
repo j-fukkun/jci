@@ -218,9 +218,10 @@ bool is_function(){
   bool is_func = false;
 
   Type* type = basetype();
-  //Token* tok = expect_ident();
-  char* name = expect_ident();
-  is_func = consume("(");
+  if(!consume(";")){
+    char* name = expect_ident();
+    is_func = name && consume("(");
+  }
 
   token = t;
   return is_func;  
@@ -312,9 +313,14 @@ Initializer* gvar_initializer(Type *type) {
 }
 
 //global_var = basetype ident type_suffix ("=" gvar_initializer)? ";"
+//           | basetype ";"
 void global_var(){
   
   Type* type = basetype();
+  if(consume(";")){
+    return;
+  }
+  
   Token* tok = token;
   char* name = expect_ident();
   type = type_suffix(type);

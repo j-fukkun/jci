@@ -55,6 +55,13 @@ struct TEST_G {
   short z;
   long w;
 } t_g;
+
+struct Tree_G{
+  int val;
+  struct Tree_G* lest;
+  struct Tree_G* right;
+};
+
 /*
 struct TEST_G test_ret_struct(){
   struct TEST_G t;
@@ -268,6 +275,13 @@ int main(){
     short z;
     long w;
   } t;
+  
+  struct Tree{
+    int val;
+    struct Tree* lest;
+    struct Tree* right;
+  };
+  
   t.x = 1;
   t.y = 2;
   assert(1, t.x, "t.x = 1;");

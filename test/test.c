@@ -56,6 +56,15 @@ struct TEST_G {
   long w;
 } t_g;
 
+struct TEST_G2;
+
+struct TEST_G3 {
+  char x;
+  short y;
+  int z;
+  long w;
+} t_g2 = {1, 2, 3, 4};
+
 struct Tree_G{
   int val;
   struct Tree_G* lest;
@@ -325,6 +334,11 @@ int main(){
   assert(32000, t_g.w, "t_g.w = 32000");
   assert(16000, t.z, "t.z = t_g.z");
   assert(32000, t.w, "t.w = t_g.w");
+
+  assert(1, t_g2.x, "t_g2.x");
+  assert(2, t_g2.y, "t_g2.y");
+  assert(3, t_g2.z, "t_g2.z");
+  assert(4, t_g2.w, "t_g2.w");
   
   printf("OK.\n");
   return 0;

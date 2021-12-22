@@ -158,6 +158,14 @@ void expect_end() {
   }
 } //expect_end()
 
+Initializer* emit_struct_padding(Initializer* cur, Type* parent, Member* mem){
+
+  int start = mem->offset + mem->type->size;
+  int end = mem->next ? mem->next->offset : parent->size;
+  return new_init_zero(cur, end - start);
+  
+} //emit_struct_padding()
+
 void skip_excess_elements2() {
   for (;;) {
     if (consume("{")){
@@ -292,8 +300,30 @@ Initializer* gvar_initializer2(Initializer* cur, Type* type){
   } //if(type->kind == TY_ARRAY)
 
   
-  //if(type->kind == TY_STRUCT)
-  //未実装
+  if(type->kind == TY_STRUCT){
+    const bool open = consume("{");
+    Member* mem = type->members;
+
+    if(!peek("}")){
+      do {
+	cur = gvar_initializer2(cur, mem->type);
+	cur = emit_struct_padding(cur, type, mem);
+	mem = mem->next;
+      } while(mem && !peek_end() && consume(","));
+    } //if(!peek("}"))
+
+    if(open && !consume_end()){
+      skip_excess_elements();
+    } //if(open && !consume_end())
+
+    //set excess struct element to zero
+    if(mem){
+      cur = new_init_zero(cur, type->size - mem->offset);
+    } //if(mem)
+    
+    return cur;
+  } //if(type->kind == TY_STRUCT)
+  
   
   const bool open = consume("{");
   Node* expression = expr();

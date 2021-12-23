@@ -3,6 +3,7 @@
 Var* locals = NULL;
 Var* globals = NULL;
 int nlabel = 1;
+std::vector<Node*> breaks = {};
 
 Var* find_lvar(Token* tok){
   Var* var = locals;
@@ -781,14 +782,16 @@ Node* stmt(){
 
 
 //stmt2 = expr ";"
-//      | "{" stmt* "}"
 //      | "return" expr? ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "{" stmt* "}"
+//      | "break" ";"
 //      | declaration
 Node* stmt2(){
   Node* node;
+  Token* t;
 
   if(consume("return")){
     if(consume(";")){
@@ -819,10 +822,14 @@ Node* stmt2(){
   if(consume("while")){
     //"while" "(" expr ")" stmt
     node = new_node(ND_WHILE);
+    breaks.push_back(node);
+    
     expect("(");
     node->cond = expr();
     expect(")");
     node->then = stmt();
+
+    breaks.pop_back();
     return node;
   } //if "while"
 
@@ -830,6 +837,8 @@ Node* stmt2(){
     //"for" "(" expr? ";" expr? ";" expr? ")" stmt
     node = new_node(ND_FOR);
     expect("(");
+    breaks.push_back(node);
+    
     //1個目
     if(!consume(";")){
       //先読みして、";"ではなかったとき
@@ -849,9 +858,11 @@ Node* stmt2(){
       expect(")");
     } //if(!consume(")"))
     node->then = stmt();
+    breaks.pop_back();
     return node;
   } //if "for"
 
+  //block statement
   if(consume("{")){
     //"{" stmt* "}"
     Node head = {};
@@ -866,6 +877,18 @@ Node* stmt2(){
     node->body = head.next;
     return node;    
   } //if(consume("{"))
+
+  //"break" ";"
+  if(t = consume("break")){
+    if(breaks.size() == 0){
+      error_tok(t, "stray break");
+    }
+    expect(";");
+    
+    node = new_node(ND_BREAK);
+    node->target = breaks.back();
+    return node;
+  } //if(consume("break"))
 
   if(is_typename()){
     //変数宣言

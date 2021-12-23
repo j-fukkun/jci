@@ -107,6 +107,7 @@ enum NodeKind{
   ND_SHL, //<< left shift
   ND_SHR, //>> right shift
   ND_MEMBER, //. struct member access
+  ND_BREAK, //break
   ND_NULL,
 };
 
@@ -130,6 +131,7 @@ struct Var{
 };
 
 struct Member;
+class BasicBlock;
 
 // AST node type
 //typedef struct Node Node;
@@ -147,6 +149,10 @@ struct Node{
   Node* els;
   Node* init; //for
   Node* inc; //for
+
+  //"break"
+  Node* target;
+  BasicBlock* _break;
 
   //block
   Node* body;

@@ -284,8 +284,8 @@ Reg* gen_expr_IR(Node* node){
     BasicBlock* cond = new_bb();
     BasicBlock* body = new_bb();
     //node->continue_ = new_bb();
-    //node->break_ = new_bb();
-    BasicBlock* _break = new_bb();
+    node->_break = new_bb();
+    //BasicBlock* _break = new_bb();
 
     if(node->init){
       gen_expr_IR(node->init); //gen_stmt
@@ -295,38 +295,49 @@ Reg* gen_expr_IR(Node* node){
     out = cond;
     if(node->cond){
       Reg* r = gen_expr_IR(node->cond);
-      br(r, body, /*node->break_*/_break);
+      br(r, body, node->_break/*_break*/);
     } else {
       jmp(body);
     } //if
 
     out = body;
     gen_expr_IR(node->then); //gen_stmt
+    //jmp node->_continue
 
     if(node->inc){
       gen_expr_IR(node->inc);
     } //if
     jmp(cond);
 
-    out = _break;
+    //out = _break;
+    out = node->_break;
     return nullptr;
   } //ND_FOR
   case ND_WHILE: {
     BasicBlock* cond = new_bb();
     BasicBlock* body = new_bb();
-    BasicBlock* _break = new_bb();
+    //BasicBlock* _break = new_bb();
+    node->_break = new_bb();
 
     out = cond;
     Reg* r = gen_expr_IR(node->cond);
-    br(r, body, _break);
+    br(r, body, node->_break/*_break*/);
 
     out = body;
     gen_expr_IR(node->then); //gen_stmt
     jmp(cond);
 
-    out = _break;
+    //out = _break;
+    out = node->_break;
     return nullptr;
   } //ND_WHILE
+  case ND_BREAK: {
+    jmp(node->target->_break);
+    //ここで新しくbbを作るとbbの作成順序的に
+    //そのbbの命令は後でコード生成されるので，おかしくなる
+    //out = new_bb(); 
+    return nullptr; //break;
+  } //ND_BREAK
   case ND_BLOCK: {
     Node* n = node->body;
     while(n){

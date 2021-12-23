@@ -63,6 +63,18 @@ IR* jmp_arg(BasicBlock* bb, Reg* r){
   return ir;
 } //jmp_arg()
 
+IR* jmp_label(char* label){
+  IR* ir = new_ir(IR_JMP_LABEL);
+  ir->dst_label = label;
+  return ir;
+} //jmp_label()
+
+IR* label(char* label){
+  IR* ir = new_ir(IR_LABEL);
+  ir->label = label;
+  return ir;
+} //label()
+
 void load(Node* node, Reg* dst, Reg* src){
   IR *ir = emit_IR(IR_LOAD, dst, NULL, src);
   ir->type_size = node->type->size;
@@ -382,6 +394,15 @@ Reg* gen_expr_IR(Node* node){
     //out = new_bb();
     return nullptr;
   } //ND_CONTINUE
+  case ND_GOTO: {
+    jmp_label(node->label_name);
+    return nullptr;
+  } //ND_GOTO
+  case ND_LABEL: {
+    label(node->label_name);
+    gen_expr_IR(node->lhs);
+    return nullptr;
+  } //ND_LABEL
   case ND_BLOCK: {
     Node* n = node->body;
     while(n){

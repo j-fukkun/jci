@@ -186,6 +186,12 @@ void gen(const IR* ir){
     } //if
     printf("  jmp .L%d\n", ir->bb1->label);
     break;
+  case IR_JMP_LABEL:
+    printf("  jmp .L.label.%s.%s\n", funcname, ir->dst_label);
+    break;
+  case IR_LABEL:
+    printf(".L.label.%s.%s:\n", funcname, ir->label);
+    break;
   case IR_FUNCALL:
     /*
     int seq = labelseq++;

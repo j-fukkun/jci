@@ -111,6 +111,8 @@ enum NodeKind{
   ND_CONTINUE, //continue
   ND_SWITCH, //switch
   ND_CASE, //case default
+  ND_GOTO, //goto
+  ND_LABEL, //labeled statement
   ND_NULL,
 };
 
@@ -162,6 +164,9 @@ struct Node{
   std::vector<Node*> cases;
   Node* _default;
   BasicBlock* bb;
+
+  //"goto", labeled statement
+  char* label_name;
     
   //block
   Node* body;
@@ -326,6 +331,8 @@ enum IRKind{
   IR_RETURN, //return
   IR_BR, //branch
   IR_JMP, //jump
+  IR_JMP_LABEL, //jump to label
+  IR_LABEL, //label
   IR_FUNCALL, //function call
   IR_PTR_ADD, //pointer add
   IR_PTR_SUB, //pointer sub
@@ -382,6 +389,10 @@ class IR{
 
   int type_size;
   int type_base_size;
+
+  //goto, label
+  char* label; //labeled statement
+  char* dst_label; //destination of goto
 };
 
 

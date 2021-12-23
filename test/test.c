@@ -384,7 +384,6 @@ int main(){
   case 0: sw_test2 = 0; break;
   case 1: sw_test2 = 1; break;
   case 2: sw_test2 = 2; break;
-  default: sw_test2 = 3;
   }
   assert(2, sw_test2, "sw_test2 == 2");
 
@@ -408,7 +407,17 @@ int main(){
   default: default_test = 3;
   }
   assert(3, default_test, "default_test == 3");
+
+  int goto_test = 0;
+ GOTO_TEST_START:
+  goto_test++;
+  if(goto_test == 10) goto GOTO_TEST_END;
+  goto GOTO_TEST_START;
   
+ GOTO_TEST_END:
+  assert(10, goto_test, "goto_test == 10");
+
+  ;
   printf("OK.\n");
   return 0;
 }

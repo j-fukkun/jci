@@ -795,6 +795,9 @@ Node* stmt(){
 //      | "{" stmt* "}"
 //      | "break" ";"
 //      | "continue" ";"
+//      | "goto" ident ";"
+//      | ident ":" stmt
+//      | ";"
 //      | declaration
 Node* stmt2(){
   Node* node;
@@ -968,6 +971,32 @@ Node* stmt2(){
     node->target = continues.back();
     return node;
   } //if(t = consume("continue"))
+
+  
+  //"goto" ident ";"
+  if(consume("goto")){
+    node = new_node(ND_GOTO);
+    node->label_name = expect_ident();
+    expect(";");
+    return node;
+  } //if(consume("goto"))
+
+  //ident ":" stmt
+  //labeled statement
+  if(t = consume_ident()){
+    if(consume(":")){
+      Node* node = new_unary(ND_LABEL, stmt());
+      node->label_name = strndup(t->str, t->len);
+      return node;
+    } //if(consume(":"))
+    token = t;
+  } //if(consume_ident())
+  
+  // ";"
+  if(consume(";")){
+    node = new_node(ND_NULL);
+    return node;
+  } //if(consume(";"))
 
   if(is_typename()){
     //変数宣言

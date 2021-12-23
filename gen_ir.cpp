@@ -283,7 +283,7 @@ Reg* gen_expr_IR(Node* node){
   case ND_FOR: {
     BasicBlock* cond = new_bb();
     BasicBlock* body = new_bb();
-    //node->continue_ = new_bb();
+    node->_continue = new_bb();
     node->_break = new_bb();
     //BasicBlock* _break = new_bb();
 
@@ -302,8 +302,9 @@ Reg* gen_expr_IR(Node* node){
 
     out = body;
     gen_expr_IR(node->then); //gen_stmt
-    //jmp node->_continue
+    jmp(node->_continue);
 
+    out = node->_continue;
     if(node->inc){
       gen_expr_IR(node->inc);
     } //if
@@ -317,6 +318,7 @@ Reg* gen_expr_IR(Node* node){
     BasicBlock* cond = new_bb();
     BasicBlock* body = new_bb();
     //BasicBlock* _break = new_bb();
+    node->_continue = cond;
     node->_break = new_bb();
 
     out = cond;
@@ -338,6 +340,11 @@ Reg* gen_expr_IR(Node* node){
     //out = new_bb(); 
     return nullptr; //break;
   } //ND_BREAK
+  case ND_CONTINUE: {
+    jmp(node->target->_continue);
+    //out = new_bb();
+    return nullptr;
+  } //ND_CONTINUE
   case ND_BLOCK: {
     Node* n = node->body;
     while(n){

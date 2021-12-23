@@ -173,6 +173,15 @@ int main(){
   }
   assert(1, a, "for(i = 0; i < 10; i++){a++; break; b++;} a;");
   assert(0, b, "for(i = 0; i < 10; i++){a++; break; b++;} b;");
+
+  i = 0; a = 0; b = 0;
+  for(i = 0; i < 10; i++){
+    a++;
+    continue;
+    b++;
+  }
+  assert(10, a, "for(i = 0; i < 10; i++){a++; continue; b++;} a;");
+  assert(0, b, "for(i = 0; i < 10; i++){a++; continue; b++;} b;");
   
   i = 0; a = 0;
   while(i < 10){
@@ -190,6 +199,16 @@ int main(){
   }
   assert(1, a, "while(i<10){a++; i++; break; b++;} a;");
   assert(0, b, "while(i<10){a++; i++; break; b++;} b;");
+
+  i = 0; a = 0; b = 0;
+  while(i < 10){
+    a++;
+    i++;
+    continue;
+    b++;
+  }
+  assert(10, a, "while(i<10){a++; i++; continue; b++;} a;");
+  assert(0, b, "while(i<10){a++; i++; continue; b++;} b;");
 
   int arr[2+2];
   *arr = 1; *(arr+1)=2;

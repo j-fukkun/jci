@@ -108,6 +108,7 @@ enum NodeKind{
   ND_SHR, //>> right shift
   ND_MEMBER, //. struct member access
   ND_BREAK, //break
+  ND_CONTINUE, //continue
   ND_NULL,
 };
 
@@ -153,6 +154,7 @@ struct Node{
   //"break"
   Node* target;
   BasicBlock* _break;
+  BasicBlock* _continue;
 
   //block
   Node* body;

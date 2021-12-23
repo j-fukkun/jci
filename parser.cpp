@@ -4,6 +4,7 @@ Var* locals = NULL;
 Var* globals = NULL;
 int nlabel = 1;
 std::vector<Node*> breaks = {};
+std::vector<Node*> continues = {};
 
 Var* find_lvar(Token* tok){
   Var* var = locals;
@@ -788,6 +789,7 @@ Node* stmt(){
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "{" stmt* "}"
 //      | "break" ";"
+//      | "continue" ";"
 //      | declaration
 Node* stmt2(){
   Node* node;
@@ -823,6 +825,7 @@ Node* stmt2(){
     //"while" "(" expr ")" stmt
     node = new_node(ND_WHILE);
     breaks.push_back(node);
+    continues.push_back(node);
     
     expect("(");
     node->cond = expr();
@@ -830,6 +833,7 @@ Node* stmt2(){
     node->then = stmt();
 
     breaks.pop_back();
+    continues.pop_back();
     return node;
   } //if "while"
 
@@ -838,6 +842,7 @@ Node* stmt2(){
     node = new_node(ND_FOR);
     expect("(");
     breaks.push_back(node);
+    continues.push_back(node);
     
     //1個目
     if(!consume(";")){
@@ -858,7 +863,9 @@ Node* stmt2(){
       expect(")");
     } //if(!consume(")"))
     node->then = stmt();
+    
     breaks.pop_back();
+    continues.pop_back();
     return node;
   } //if "for"
 
@@ -889,6 +896,18 @@ Node* stmt2(){
     node->target = breaks.back();
     return node;
   } //if(consume("break"))
+
+  //"continue" ";"
+  if(t = consume("continue")){
+    if(continues.size() == 0){
+      error_tok(t, "stray continue");
+    }
+    expect(";");
+    
+    node = new_node(ND_CONTINUE);
+    node->target = continues.back();
+    return node;
+  } //if(t = consume("continue"))
 
   if(is_typename()){
     //変数宣言

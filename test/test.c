@@ -377,6 +377,37 @@ int main(){
   assert(2, t_g2.y, "t_g2.y");
   assert(3, t_g2.z, "t_g2.z");
   assert(4, t_g2.w, "t_g2.w");
+
+  int sw_test = 2;
+  int sw_test2; 
+  switch(sw_test){
+  case 0: sw_test2 = 0; break;
+  case 1: sw_test2 = 1; break;
+  case 2: sw_test2 = 2; break;
+  default: sw_test2 = 3;
+  }
+  assert(2, sw_test2, "sw_test2 == 2");
+
+  sw_test = 0;
+  sw_test2 = -1; int sw_test3 = 0;
+  switch(sw_test){
+  case 0: sw_test2 = 0; 
+  case 1: sw_test2 = 1; sw_test3 = 100; break;
+  case 2: sw_test2 = 2; break;
+  default: sw_test2 = 3;
+  }
+  assert(1, sw_test2, "sw_test2 == 1");
+  assert(100, sw_test3, "sw_test3 == 100");
+
+  sw_test = 10;
+  int default_test = -1;
+  switch(sw_test){
+  case 0: default_test = 0; break;
+  case 1: default_test = 1; break;
+  case 2: default_test = 2; break;
+  default: default_test = 3;
+  }
+  assert(3, default_test, "default_test == 3");
   
   printf("OK.\n");
   return 0;

@@ -5,6 +5,8 @@ Var* globals = NULL;
 int nlabel = 1;
 std::vector<Node*> breaks = {};
 std::vector<Node*> continues = {};
+std::vector<Node*> switches = {};
+Node* current_switch = nullptr;
 
 Var* find_lvar(Token* tok){
   Var* var = locals;
@@ -787,6 +789,9 @@ Node* stmt(){
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "switch" "(" expr ")" stmt
+//      | "case" const-expr ":" stmt
+//      | "default" ":" stmt
 //      | "{" stmt* "}"
 //      | "break" ";"
 //      | "continue" ";"
@@ -868,6 +873,61 @@ Node* stmt2(){
     continues.pop_back();
     return node;
   } //if "for"
+
+  //switch
+  if(consume("switch")){
+    node = new_node(ND_SWITCH);
+    node->cases = {};
+    
+    expect("(");
+    node->cond = expr();
+    expect(")");
+
+    breaks.push_back(node);
+    switches.push_back(node);
+    //Node* sw = current_switch;
+    //current_switch = node;
+    
+    node->body = stmt();
+
+    //current_switch = sw;
+    breaks.pop_back();
+    switches.pop_back();
+    return node;
+  } //if(consume("switch"))
+
+  //case
+  if(t = consume("case")){
+    if(/*!current_switch*/switches.size() == 0){
+      error_tok(t, "stray case");
+    }
+    int value = const_expr();
+    expect(":");
+
+    node = new_node(ND_CASE);
+    node->body = stmt();
+    node->val = value;
+    
+    Node* n = switches.back();
+    n->cases.push_back(node);
+    return node;
+  } //if(t = consume("case"))
+
+  //default
+  if(t = consume("default")){
+    if(/*!current_switch*/switches.size() == 0){
+      error_tok(t, "stray default");
+    }
+    expect(":");
+
+    node = new_node(ND_CASE);
+    node->body = stmt();
+    
+    //current_switch->default_case = node;
+    Node* n = switches.back();
+    n->_default = node;
+    return node;
+  } //if(t = consume("default"))
 
   //block statement
   if(consume("{")){

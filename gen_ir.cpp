@@ -333,6 +333,43 @@ Reg* gen_expr_IR(Node* node){
     out = node->_break;
     return nullptr;
   } //ND_WHILE
+  case ND_SWITCH: {
+    node->_break = new_bb();
+    node->_continue = new_bb();
+
+    Reg* r = gen_expr_IR(node->cond);
+    for(auto iter = node->cases.begin(), end = node->cases.end();
+	iter != end; ++iter){
+      Node* _case = *iter;
+      _case->bb = new_bb();
+
+      BasicBlock* next = new_bb();
+      Reg* r2 = new_reg();
+      emit_IR(IR_EQ, r2, r, new_imm(_case->val));
+      br(r2, _case->bb, next);
+      out = next;
+    } //for iter
+
+    if(node->_default){
+      BasicBlock* bb_default = new_bb();
+      node->_default->bb = bb_default;
+      jmp(bb_default);
+    } else {
+      jmp(node->_break);
+    } //if
+
+    gen_expr_IR(node->body);
+    jmp(node->_break);
+
+    out = node->_break;
+    return nullptr;
+  } //ND_SWITCH
+  case ND_CASE: {
+    jmp(node->bb);
+    out = node->bb;
+    gen_expr_IR(node->body);      
+    return nullptr;
+  } //ND_CASE
   case ND_BREAK: {
     jmp(node->target->_break);
     //ここで新しくbbを作るとbbの作成順序的に

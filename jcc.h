@@ -109,6 +109,8 @@ enum NodeKind{
   ND_MEMBER, //. struct member access
   ND_BREAK, //break
   ND_CONTINUE, //continue
+  ND_SWITCH, //switch
+  ND_CASE, //case default
   ND_NULL,
 };
 
@@ -140,7 +142,7 @@ struct Node{
   NodeKind kind; // Node kind
   Node* lhs;     // Left-hand side
   Node* rhs;     // Right-hand side
-  int val;       // Used if kind == ND_NUM
+  int val;       // Used if kind == ND_NUM || ND_CASE
 
   Var* var;
 
@@ -156,6 +158,11 @@ struct Node{
   BasicBlock* _break;
   BasicBlock* _continue;
 
+  //"switch" "case" "default"
+  std::vector<Node*> cases;
+  Node* _default;
+  BasicBlock* bb;
+    
   //block
   Node* body;
   Node* next;

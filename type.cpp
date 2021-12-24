@@ -2,11 +2,13 @@
 
 //Type* int_type = &(Type){ TY_INT, nullptr };
 //                       kind, size, align
-Type* int_type = new Type(TY_INT, 4, 4);
 Type* char_type = new Type(TY_CHAR, 1, 1);
 Type* void_type = new Type(TY_VOID, 1, 1);
+Type* bool_type = new Type(TY_BOOL, 1, 1);
+Type* int_type = new Type(TY_INT, 4, 4);
 Type* short_type = new Type(TY_SHORT, 2, 2);
 Type* long_type = new Type(TY_LONG, 8, 8);
+
 
 
 bool is_integer(Type* t){
@@ -15,6 +17,7 @@ bool is_integer(Type* t){
     || k == TY_CHAR
     || k == TY_SHORT
     || k == TY_LONG
+    || k == TY_BOOL
     ;
 } //is_integer()
 

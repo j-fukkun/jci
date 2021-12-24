@@ -219,15 +219,17 @@ struct Program{
 };
 
 
-extern Type* int_type;
 extern Type* char_type;
 extern Type* void_type;
+extern Type* bool_type;
+extern Type* int_type;
 extern Type* short_type;
 extern Type* long_type;
 
 enum TypeKind{
   TY_INT, //4 byte
   TY_CHAR, //1 byte
+  TY_BOOL, //1 byte
   TY_SHORT,  //2 byte
   TY_LONG, //8 byte
   TY_VOID,
@@ -389,6 +391,7 @@ class IR{
   Reg* args[6]; //arguments
   int num_args; //the number of arguments
 
+  Type* type;
   int type_size;
   int type_base_size;
 

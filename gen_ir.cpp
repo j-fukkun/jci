@@ -242,6 +242,7 @@ Reg* gen_expr_IR(Node* node){
     IR* ir = emit_IR(IR_STORE, NULL, d, a);
     //IR* ir = emit_IR(IR_STORE, d, a, NULL);
     ir->type_size = node->type->size;
+    ir->type = node->type;
     return a;
     //return d;
   } //ND_ASSIGN

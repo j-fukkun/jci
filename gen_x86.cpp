@@ -158,11 +158,19 @@ void gen(const IR* ir){
   case IR_LOAD:
     //printf("  mov %s, [%s]\n", reg(d, ir->type_size).c_str(), regs[b].c_str());
     load(ir);
+    if(ir->type_size == 1){
+      printf("  movzb %s, %s\n", regs[d].c_str(), regs8[d].c_str());
+    } //if
     break;
   case IR_LOAD_SPILL:
     printf("  mov %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
     break;
   case IR_STORE:
+    if(ir->type->kind == TY_BOOL){
+      printf("  cmp %s, 0\n", regs[b].c_str());
+      printf("  setne %s\n", regs8[b].c_str());
+      printf("  movzb %s, %s\n", regs[b].c_str(), regs8[b].c_str());
+    } //if
     printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
     //printf("  mov [%s], %s\n", regs[d].c_str(), reg(a, ir->type_size).c_str());
     break;

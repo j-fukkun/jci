@@ -91,6 +91,14 @@ void test_pointer_struct(struct TEST_G* s){
 }
 */
 
+_Bool func_bool(_Bool b1, _Bool b2){
+  return b1 && b2;
+}
+
+bool func_bool2(bool b1, bool b2){
+  return b1 || b2;
+}
+
 int gvar1;
 char gvar2;
 int gvar3 = 10;
@@ -430,6 +438,26 @@ int main(){
   assert(1, t_init.y, "lvar_initializer test, t_init.y");
   assert(2, t_init.z, "lvar_initializer test, t_init.z");
   assert(3, t_init.w, "lvar_initializer test, t_init.w");
+
+  _Bool bool_test = 0;
+  assert(0, bool_test, "bool_test = 0; bool_test;");
+  bool_test = 1;
+  assert(1, bool_test, "bool_test = 1; bool_test;");
+  bool_test = 2;
+  assert(1, bool_test, "bool_test = 2; bool_test;");
+  
+  bool bool_test2 = 0;
+  assert(0, bool_test2, "bool_test2 = 0; bool_test2;");
+  bool_test2 = 1;
+  assert(1, bool_test2, "bool_test2 = 1; bool_test2;");
+  bool_test2 = 2;
+  assert(1, bool_test2, "bool_test2 = 2; bool_test2;");
+
+  bool_test = 0;
+  bool_test = func_bool(bool_test, bool_test2);
+  assert(0, bool_test, "bool_test = func_bool(bool_test, bool_test2); bool_test;");
+  bool_test2 = func_bool2(bool_test, bool_test2);
+  assert(1, bool_test2, "bool_test2 = func_bool2(bool_test, bool_test2); bool_test2;");
   
   printf("OK.\n");
   return 0;

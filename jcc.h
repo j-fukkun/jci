@@ -192,9 +192,11 @@ struct Initializer{
   int val;
 };
 
+struct Member;
 struct Designator{
   Designator* next;
   int index; //for array
+  Member* mem; //for struct
 };
 
 class BasicBlock;
@@ -294,8 +296,8 @@ Node* logand();
 Node* equality();
 Node* relational();
 Node* shift();
-Node* new_add(Node* lhs, Node* rhs);
-Node* new_sub(Node* lhs, Node* rhs);
+Node* new_add(Node* lhs, Node* rhs, Token* tok);
+Node* new_sub(Node* lhs, Node* rhs, Token* tok);
 Node* add();
 Node* mul();
 Node* new_unary(NodeKind kind, Node* lhs);

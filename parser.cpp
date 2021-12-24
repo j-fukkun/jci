@@ -6,7 +6,7 @@ int nlabel = 1;
 std::vector<Node*> breaks = {};
 std::vector<Node*> continues = {};
 std::vector<Node*> switches = {};
-Node* current_switch = nullptr;
+//Node* current_switch = nullptr;
 
 Var* find_lvar(Token* tok){
   Var* var = locals;
@@ -503,20 +503,20 @@ Node* new_desg_node2(Var* var, Designator* desg) {
   }
 
   Node* node = new_desg_node2(var, desg->next);
-  /*
+  
   if(desg->mem){
-    node = new_unary(ND_MEMBER, node, desg->mem->tok);
+    node = new_unary(ND_MEMBER, node/*, desg->mem->tok*/);
     node->member = desg->mem;
     return node;
   }
-  */
-
-  node = new_add(node, new_num(desg->index));
+  
+  node = new_add(node, new_num(desg->index), token);
   return new_unary(ND_DEREF, node);
 } //new_desg_node2()
 
 Node* new_desg_node(Var* var, Designator* desg, Node* rhs) {
   Node* lhs = new_desg_node2(var, desg);
+  add_type(lhs);
   Node* node = new_binary(ND_ASSIGN, lhs, rhs);
   add_type(node);
   Node* ret = new_expr(ND_EXPR_STMT, node);
@@ -602,6 +602,30 @@ Node* lvar_initializer2(Node* cur, Var* lvar, Type* type, Designator* desg){
     return cur;
   } //if(type->kind == TY_ARRAY)
 
+  if(type->kind == TY_STRUCT){
+    const bool open = consume("{");
+    Member* mem = type->members;
+
+    if(!peek("}")){
+      do {
+	Designator desg2 = {desg, 0, mem};
+	cur = lvar_initializer2(cur, lvar, mem->type, &desg2);
+	mem = mem->next;
+      } while(mem && !peek_end() && consume(","));
+    } //if(!peek("}"))
+
+    if(open && !consume_end()){
+      skip_excess_elements();
+    } //if(open && !consume_end())
+
+    //set excess struct elements to zero
+    for(; mem; mem = mem->next){
+      Designator desg2 = {desg, 0, mem};
+      cur = lvar_init_zero(cur, lvar, mem->type, &desg2);
+    } //for
+    return cur;
+  } //if(type->kind == TY_STRUCT)
+  
   bool open = consume("{");
   cur->next = new_desg_node(lvar, desg, assign());
   if (open){
@@ -1152,7 +1176,7 @@ Node* shift(){
   
 } //shift()
 
-Node* new_add(Node* lhs, Node* rhs){
+Node* new_add(Node* lhs, Node* rhs, Token* tok){
   add_type(lhs);
   add_type(rhs);
 
@@ -1167,11 +1191,11 @@ Node* new_add(Node* lhs, Node* rhs){
     //左辺がint 右辺がポインタ
     return new_binary(ND_PTR_ADD, rhs, lhs);
   }
-  error("invalid operands");
+  error_tok(tok, "invalid operands");
 
 } //new_add()
 
-Node* new_sub(Node* lhs, Node* rhs){
+Node* new_sub(Node* lhs, Node* rhs, Token* tok){
   add_type(lhs);
   add_type(rhs);
 
@@ -1186,21 +1210,22 @@ Node* new_sub(Node* lhs, Node* rhs){
     //左辺がポインタ 右辺がポインタ
     return new_binary(ND_PTR_DIFF, rhs, lhs);
   }
-  error("invalid operands");
+  error_tok(tok, "invalid operands");
 
 } //new_sub()
 
 //add = mul ("+" mul | "-" mul)*
 Node* add(){
   Node* node = mul();
-
+  Token* t;
+  
   for(;;){
-    if(consume("+")){
+    if(t = consume("+")){
       //node = new_binary(ND_ADD, node, mul());
-      node = new_add(node, mul());
-    } else if(consume("-")){
+      node = new_add(node, mul(), t);
+    } else if(t = consume("-")){
       //node = new_binary(ND_SUB, node, mul());
-      node = new_sub(node, mul());
+      node = new_sub(node, mul(), t);
     } else {
       return node;
     } //if
@@ -1287,7 +1312,7 @@ Node* new_post_inc(Node* n, const int imm){
   //*t = *t + imm;
   vec.push_back(new_binary(ND_ASSIGN,
 			   new_deref(t),
-			   new_add(new_deref(t), new_num(imm))
+			   new_add(new_deref(t), new_num(imm), token)
 			   )
 		);
 
@@ -1333,11 +1358,12 @@ Node* struct_ref(Node* lhs){
 Node* postfix(){
 
   Node* node = primary();
-
+  Token* t;
+  
   for(;;){
-    if(consume("[")){
+    if(t = consume("[")){
       //a[b] => *(a + b)
-      Node* tmp = new_add(node, expr());
+      Node* tmp = new_add(node, expr(), t);
       expect("]");
       node = new_unary(ND_DEREF, tmp);
       continue;

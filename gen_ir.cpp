@@ -199,7 +199,7 @@ Reg* gen_expr_IR(Node* node){
     //++i --> i = i + 1
     Node* n = new_node(ND_ASSIGN);
     n->lhs = node->lhs;
-    n->rhs = new_add(node->lhs, new_num(1));
+    n->rhs = new_add(node->lhs, new_num(1), token);
     add_type(n);
     return gen_expr_IR(n);
   } //ND_PRE_INC
@@ -207,7 +207,7 @@ Reg* gen_expr_IR(Node* node){
     //--i --> i = i - 1
     Node* n = new_node(ND_ASSIGN);
     n->lhs = node->lhs;
-    n->rhs = new_sub(node->lhs, new_num(1));
+    n->rhs = new_sub(node->lhs, new_num(1), token);
     add_type(n);
     return gen_expr_IR(n);
   } //ND_PRE_DEC

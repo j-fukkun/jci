@@ -373,10 +373,10 @@ int main(){
   assert(16000, t.z, "t.z = t_g.z");
   assert(32000, t.w, "t.w = t_g.w");
 
-  assert(1, t_g2.x, "t_g2.x");
-  assert(2, t_g2.y, "t_g2.y");
-  assert(3, t_g2.z, "t_g2.z");
-  assert(4, t_g2.w, "t_g2.w");
+  assert(1, t_g2.x, "gvar_initializer test, t_g2.x");
+  assert(2, t_g2.y, "gvar_initializer test, t_g2.y");
+  assert(3, t_g2.z, "gvar_initializer test, t_g2.z");
+  assert(4, t_g2.w, "gvar_initializer test, t_g2.w");
 
   int sw_test = 2;
   int sw_test2; 
@@ -417,7 +417,20 @@ int main(){
  GOTO_TEST_END:
   assert(10, goto_test, "goto_test == 10");
 
-  ;
+  ; //null statement
+
+  struct TEST_INIT {
+    char x;
+    int y;
+    short z;
+    long w;
+  } t_init = {0, 1, 2, 3};
+
+  assert(0, t_init.x, "lvar_initializer test, t_init.x");
+  assert(1, t_init.y, "lvar_initializer test, t_init.y");
+  assert(2, t_init.z, "lvar_initializer test, t_init.z");
+  assert(3, t_init.w, "lvar_initializer test, t_init.w");
+  
   printf("OK.\n");
   return 0;
 }

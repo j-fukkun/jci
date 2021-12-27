@@ -458,6 +458,9 @@ int main(){
   assert(0, bool_test, "bool_test = func_bool(bool_test, bool_test2); bool_test;");
   bool_test2 = func_bool2(bool_test, bool_test2);
   assert(1, bool_test2, "bool_test2 = func_bool2(bool_test, bool_test2); bool_test2;");
+
+  assert(1, !bool_test, "bool_test = 0; !bool_test");
+  assert(0, !bool_test2, "bool_test2 = 1; !bool_test2");
   
   printf("OK.\n");
   return 0;

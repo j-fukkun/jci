@@ -1261,7 +1261,7 @@ Node* new_unary(NodeKind kind, Node* lhs){
   return node;
 } //new_unary()
 
-//unary = ("+" | "-" | "*" | "&")? unary
+//unary = ("+" | "-" | "*" | "&" | "!")? unary
 //        | ("++" | "--") unary
 //        | "sizeof" unary
 //        | postfix
@@ -1281,6 +1281,11 @@ Node* unary(){
   if(consume("&")){
     Node* node = new_node(ND_ADDR);
     node->lhs = unary();
+    return node;
+  }
+
+  if(consume("!")){
+    Node* node = new_unary(ND_NOT, unary());
     return node;
   }
 

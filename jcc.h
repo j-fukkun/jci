@@ -113,6 +113,7 @@ enum NodeKind{
   ND_CASE, //case default
   ND_GOTO, //goto
   ND_LABEL, //labeled statement
+  ND_NOT, //! negation
   ND_NULL,
 };
 

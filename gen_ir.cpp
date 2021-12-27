@@ -195,6 +195,12 @@ Reg* gen_expr_IR(Node* node){
     out->param = new_reg();
     return out->param;
   } //ND_LOGAND
+  case ND_NOT: {
+    Reg* d = new_reg();
+    Reg* a = gen_expr_IR(node->lhs);
+    emit_IR(IR_EQ, d, a, new_imm(0));
+    return d;
+  } //ND_NOT
   case ND_PRE_INC:{
     //++i --> i = i + 1
     Node* n = new_node(ND_ASSIGN);

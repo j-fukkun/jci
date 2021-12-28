@@ -114,6 +114,10 @@ enum NodeKind{
   ND_GOTO, //goto
   ND_LABEL, //labeled statement
   ND_NOT, //! negation
+  ND_BITOR, //bit or |
+  ND_BITAND, //bit and &
+  ND_BITXOR, //bit xor ^
+  ND_BITNOT, //bit not ~
   ND_NULL,
 };
 
@@ -296,6 +300,9 @@ Node* expr();
 Node* assign();
 Node* logor();
 Node* logand();
+Node* bit_or();
+Node* bit_xor();
+Node* bit_and();
 Node* equality();
 Node* relational();
 Node* shift();
@@ -345,7 +352,9 @@ enum IRKind{
   IR_LABEL_ADDR, //global variable
   IR_SHL, //<< left shift
   IR_SHR, //>> right shift
-  
+  IR_BITOR, //bitor |
+  IR_BITAND, //bitand &
+  IR_BITXOR, //bitxor ^
 };
 
 class Reg{

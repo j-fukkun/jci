@@ -153,7 +153,7 @@ void gen(const IR* ir){
     printf("  and %s, %s\n", regs[d].c_str(), regs[b].c_str());
     break;
   case IR_BITXOR:
-    printf("  xor %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    
     break;
   case IR_LVAR:
     printf("  lea %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);

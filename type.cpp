@@ -83,10 +83,14 @@ void add_type(Node *node) {
   case ND_NE:
   case ND_LT:
   case ND_LE:
+  case ND_NOT:
   case ND_LOGOR:
   case ND_LOGAND:
   case ND_FUNCALL:
   case ND_NUM:
+  case ND_BITAND:
+  case ND_BITOR:
+  case ND_BITXOR:
     node->type = int_type;
     return;
   case ND_PTR_ADD:
@@ -98,6 +102,7 @@ void add_type(Node *node) {
     //case ND_POST_DEC:
   case ND_SHL:
   case ND_SHR:
+  case ND_BITNOT:
     node->type = node->lhs->type;
     return;
   case ND_VAR:

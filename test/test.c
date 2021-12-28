@@ -461,6 +461,13 @@ int main(){
 
   assert(1, !bool_test, "bool_test = 0; !bool_test");
   assert(0, !bool_test2, "bool_test2 = 1; !bool_test2");
+
+  int bittest = 1;
+  int bittest2 = 2;
+  assert(3, bittest | bittest2, "bittest = 1; bittest2 = 2; bittest | bittest2");
+  assert(0, bittest & bittest2, "bittest = 1; bittest2 = 2; bittest & bittest2");
+  assert(2, bittest ^ (bittest | bittest2), "bittest = 1; bittest2 = 2; bittest ^ (bittest | bittest2)");
+  assert(-2, ~bittest, "bittest = 1; ~bittest");
   
   printf("OK.\n");
   return 0;

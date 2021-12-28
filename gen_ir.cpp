@@ -201,6 +201,21 @@ Reg* gen_expr_IR(Node* node){
     emit_IR(IR_EQ, d, a, new_imm(0));
     return d;
   } //ND_NOT
+  case ND_BITOR: {
+    return gen_binop_IR(IR_BITOR, node);
+  } //ND_BITOR
+  case ND_BITAND: {
+    return gen_binop_IR(IR_BITAND, node);
+  } //ND_BITAND
+  case ND_BITXOR: {
+    return gen_binop_IR(IR_BITXOR, node);
+  } //ND_BITXOR
+  case ND_BITNOT: {
+    Reg* d = new_reg();
+    Reg* a = gen_expr_IR(node->lhs);
+    emit_IR(IR_BITXOR, d, a, new_imm(-1));
+    return d;
+  } //ND_BITNOT
   case ND_PRE_INC:{
     //++i --> i = i + 1
     Node* n = new_node(ND_ASSIGN);

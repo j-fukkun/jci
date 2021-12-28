@@ -1119,14 +1119,41 @@ Node* logor(){
   return node;
 } //logor()
 
-//logand = equality ("&&" equality)*
+//logand = bitor ("&&" bitor)*
 Node* logand(){
-  Node* node = equality();
+  Node* node = bit_or();
   while(consume("&&")){
-    node = new_binary(ND_LOGAND, node, equality());
+    node = new_binary(ND_LOGAND, node, bit_or());
   }  //while
   return node;
 } //logand()
+
+//bitor = birxor ("|" bitxor)*
+Node* bit_or(){
+  Node* node = bit_xor();
+  while(consume("|")){
+    node = new_binary(ND_BITOR, node, bit_xor());
+  } //while
+  return node;
+} //bit_or()
+
+//bitxor = bitand ("^" bitand)*
+Node* bit_xor(){
+  Node* node = bit_and();
+  while(consume("^")){
+    node = new_binary(ND_BITXOR, node, bit_and());
+  } //while
+  return node;
+} //bitxor()
+
+//bitand = equality ("&" equality)*
+Node* bit_and(){
+  Node* node = equality();
+  while(consume("&")){
+    node = new_binary(ND_BITAND, node, equality());
+  } //while()
+  return node;
+} //bitand()
 
 //equality = relatinal ("==" relational | "!=" relational)*
 Node* equality(){
@@ -1261,7 +1288,7 @@ Node* new_unary(NodeKind kind, Node* lhs){
   return node;
 } //new_unary()
 
-//unary = ("+" | "-" | "*" | "&" | "!")? unary
+//unary = ("+" | "-" | "*" | "&" | "!" | "~")? unary
 //        | ("++" | "--") unary
 //        | "sizeof" unary
 //        | postfix
@@ -1286,6 +1313,11 @@ Node* unary(){
 
   if(consume("!")){
     Node* node = new_unary(ND_NOT, unary());
+    return node;
+  }
+
+  if(consume("~")){
+    Node* node = new_unary(ND_BITNOT, unary());
     return node;
   }
 

@@ -195,6 +195,10 @@ struct Initializer{
   //constant expression
   int size;
   int val;
+
+  //reference to other global variable
+  char* label;
+  long addend;
 };
 
 struct Member;
@@ -292,8 +296,9 @@ Type* struct_decl();
 Program* program();
 Function* function();
 Type* type_suffix(Type*);
-const int const_expr();
-const int eval(Node*);
+const long const_expr();
+const long eval(Node*);
+const long eval2(Node*, Var**);
 Node* stmt();
 Node* stmt2();
 Node* expr();

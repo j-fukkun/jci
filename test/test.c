@@ -110,6 +110,22 @@ char gvar8[] = "Compiler World!!";
 int gvar9[][3] = {{1,2,3}, {4,5,6}, {7,8,9}};
 short gvar_short = 1000;
 long gvar_long = 10000;
+char* gvar10[] = {"foo", "bar"};
+struct {char a; int b;} gvar11[2] = {{1, 2}, {3, 4}};
+struct {int a[2];} gvar12[2] = {{{1, 2}}};
+struct {int a[2];} gvar13[2] = {{1, 2}, 3, 4};
+struct {int a[2];} gvar14[2] = {1, 2, 3, 4};
+char* gvar15 = {"foo"};
+//char gvar16[][4] = {'f','o','o','b','a','r',0};
+char gvar17[] = "foobar";
+char gvar18[10] = "foobar";
+char gvar19[3] = "foobar";
+char* gvar20 = gvar17+0;
+char* gvar21 = gvar17+3;
+char* gvar22 = &gvar17-3;
+char* gvar23[] = {gvar17+0, gvar17+3, gvar17-3};
+int* gvar24 = &gvar3; //10
+int* gvar25 = gvar4 + 1; //2
 
 int main(){
   
@@ -468,6 +484,53 @@ int main(){
   assert(0, bittest & bittest2, "bittest = 1; bittest2 = 2; bittest & bittest2");
   assert(2, bittest ^ (bittest | bittest2), "bittest = 1; bittest2 = 2; bittest ^ (bittest | bittest2)");
   assert(-2, ~bittest, "bittest = 1; ~bittest");
+
+  assert(0, strcmp(gvar10[0], "foo"), "strcmp(gvar10[0], foo");
+  assert(0, strcmp(gvar10[1], "bar"), "strcmp(gvar10[1], bar");
+  assert(0, gvar10[1][3], "gvar10[1][3]");
+  assert(2, sizeof(gvar10)/sizeof(*gvar10), "sizeof(gvar10)/sizeof(*gvar10)");
+  
+  assert(1, gvar11[0].a, "gvar11[0].a");
+  assert(2, gvar11[0].b, "gvar11[0].b");
+  assert(3, gvar11[1].a, "gvar11[1].a");
+  assert(4, gvar11[1].b, "gvar11[1].b");
+  
+  //assert(1, gvar12[0].a[0], "gvar12[0].a[0]");
+  //assert(2, gvar12[0].a[1], "gvar12[0].a[1]");
+  //assert(0, gvar12[1].a[0], "gvar12[1].a[0]");
+  //assert(0, gvar12[1].a[1], "gvar12[1].a[1]");
+  
+  //assert(1, gvar13[0].a[0], "gvar13[0].a[0]");
+  //assert(2, gvar13[0].a[1], "gvar13[0].a[1]");
+  //assert(3, gvar13[1].a[0], "gvar13[1].a[0]");
+  //assert(4, gvar13[1].a[1], "gvar13[1].a[1]");
+
+  //assert(1, gvar14[0].a[0], "gvar14[0].a[0]");
+  //assert(2, gvar14[0].a[1], "gvar14[0].a[1]");
+  //assert(3, gvar14[1].a[0], "gvar14[1].a[0]");
+  //assert(4, gvar14[1].a[1], "gvar14[1].a[1]");
+
+  assert(0, strcmp(gvar15, "foo"), "strcmp(gvar15, foo)");
+  //assert gvar16
+
+  assert(7, sizeof(gvar17), "sizeof(gvar17)");
+  assert(10, sizeof(gvar18), "sizeof(gvar18)");
+  assert(3, sizeof(gvar19), "sizeof(gvar19)");
+
+  assert(0, memcmp(gvar17, "foobar", 7), "memcmp(gvar17, foobar, 7)");
+  //assert(0, memcmp(gvar18, "foobar\0\0\0, 10"), memcmp(gvar18, "foobar\0\0\0, 10"));
+  assert(0, memcmp(gvar19, "foo", 3), "memcmp(gvar19, foo, 3)");
+
+  assert(0, strcmp(gvar20, "foobar"), "strcmp(gvar20, foobar)");
+  assert(0, strcmp(gvar21, "bar"), "strcmp(gvar21, bar)");
+  assert(0, strcmp(gvar22+3, "foobar"), "strcmp(gvar22+3, foobar)");
+
+  assert(0, strcmp(gvar23[0], "foobar"), "strcmp(gvar23[0], foobar)");
+  assert(0, strcmp(gvar23[1], "bar"), "strcmp(gvar23[1], bar)");
+  assert(0, strcmp(gvar23[2]+3, "foobar"), "strcmp(gvar23[2]+3, foobar)");
+
+  assert(10, *gvar24, "*gvar24");
+  assert(2, *gvar25, "*gvar25");
   
   printf("OK.\n");
   return 0;

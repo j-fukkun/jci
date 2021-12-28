@@ -280,7 +280,9 @@ void emit_data(Program* prog){
 
       Initializer* init = gvar->initializer;
       for(init; init; init = init->next){
-	if(init->size == 1){
+	if(init->label){
+	  printf("  .quad %s%+ld\n", init->label, init->addend);
+	}else if(init->size == 1){
 	  printf("  .byte %d\n", init->val);
 	} else {
 	  printf("  .%dbyte %d\n", init->size, init->val);

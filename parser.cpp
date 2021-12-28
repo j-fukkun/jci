@@ -132,6 +132,14 @@ Initializer* new_init_val(Initializer* cur, const int sz, const int val){
   return init;
 } //new_init_val()
 
+Initializer* new_init_label(Initializer* cur, const char* label, const long addend){
+  Initializer* init = (Initializer*)calloc(1, sizeof(Initializer));
+  init->label = const_cast<char*>(label);
+  init->addend = addend;
+  cur->next = init;
+  return init;
+} //new_init_label()
+
 Initializer* new_init_zero(Initializer* cur, const int nbytes){
   //nbytes分、0埋め
   for(int i = 0; i < nbytes; i++){
@@ -341,8 +349,14 @@ Initializer* gvar_initializer2(Initializer* cur, Type* type){
     expect_end();
   }
 
-  const int constant = eval(expression);
-
+  Var* v = nullptr;
+  const long constant = eval2(expression, &v);
+  if(v){
+    int scale = (v->type->kind == TY_ARRAY)
+      ? v->type->base->size : v->type->size;
+    return new_init_label(cur, v->name, constant * scale);
+  } //if(v)
+  
   return new_init_val(cur, type->size, constant);
 } //gvar_initializer2()
 
@@ -785,27 +799,74 @@ Type* struct_decl(){
 } //struct_decl()
 
 
-const int const_expr(){
-  return eval(add());
+const long const_expr(){
+  return eval(logor());
 } //const_expr()
 
+const long eval(Node* node){
+  return eval2(node, nullptr);
+} //eval()
 
-const int eval(Node* node){
+const long eval2(Node* node, Var** v){
   switch(node->kind){
   case ND_ADD:
     return eval(node->lhs) + eval(node->rhs);
+  case ND_PTR_ADD:
+    return eval2(node->lhs, v) + eval(node->rhs);
   case ND_SUB:
     return eval(node->lhs) - eval(node->rhs);
+  case ND_PTR_SUB:
+    return eval2(node->lhs, v) - eval(node->rhs);
+  case ND_PTR_DIFF:
+    return eval2(node->lhs, v) - eval2(node->rhs, v);
   case ND_MUL:
     return eval(node->lhs) * eval(node->rhs);
   case ND_DIV:
     return eval(node->lhs) / eval(node->rhs);
+  case ND_BITAND:
+    return eval(node->lhs) & eval(node->rhs);
+  case ND_BITOR:
+    return eval(node->lhs) | eval(node->rhs);
+  case ND_BITXOR:
+    return eval(node->lhs) ^ eval(node->rhs);
+  case ND_BITNOT:
+    return ~eval(node->lhs);
+  case ND_SHL:
+    return eval(node->lhs) << eval(node->rhs);
+  case ND_SHR:
+    return eval(node->lhs) >> eval(node->rhs);
+  case ND_EQ:
+    return eval(node->lhs) == eval(node->rhs);
+  case ND_NE:
+    return eval(node->lhs) != eval(node->rhs);
+  case ND_LT:
+    return eval(node->lhs) < eval(node->rhs);
+  case ND_LE:
+    return eval(node->lhs) <= eval(node->rhs);
+  case ND_NOT:
+    return !eval(node->lhs);
+  case ND_LOGAND:
+    return eval(node->lhs) && eval(node->rhs);
+  case ND_LOGOR:
+    return eval(node->lhs) || eval(node->rhs);
   case ND_NUM:
     return node->val;
-
+  case ND_ADDR:
+    if(!v || *v || node->lhs->kind != ND_VAR || node->lhs->var->is_local){
+      error_tok(token, "invalid initializer");
+    } //if
+    *v = node->lhs->var;
+    return 0;
+  case ND_VAR:
+    if(!v || *v || node->var->type->kind != TY_ARRAY){
+      error_tok(token, "invalid initializer");
+    } //if
+    *v = node->var;
+    return 0;
   } //switch()
+  
   error("not a constant expression");
-}
+} //eval2()
 
 
 Node* stmt(){

@@ -367,6 +367,24 @@ Reg* gen_expr_IR(Node* node){
     out = node->_break;
     return nullptr;
   } //ND_WHILE
+  case ND_DO_WHILE: {
+    node->_continue = new_bb();
+    node->_break = new_bb();
+    BasicBlock* body = new_bb();
+
+    jmp(body);
+
+    out = body;
+    gen_expr_IR(node->then);
+    jmp(node->_continue);
+
+    out = node->_continue;
+    Reg* r = gen_expr_IR(node->cond);
+    br(r, body, node->_break);
+
+    out = node->_break;
+    return nullptr;
+  } //ND_DO_WHILE
   case ND_SWITCH: {
     node->_break = new_bb();
     node->_continue = new_bb();

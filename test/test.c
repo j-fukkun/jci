@@ -234,6 +234,27 @@ int main(){
   assert(10, a, "while(i<10){a++; i++; continue; b++;} a;");
   assert(0, b, "while(i<10){a++; i++; continue; b++;} b;");
 
+  i = 0; a = 0; b = 0;
+  do {
+    i++;
+    a++;
+    break;
+    b++;
+  } while(i < 10);
+  assert(1, a, "do{i++; a++; break; b++;}while(i<10); a;");
+  assert(0, b, "do{i++; a++; break; b++;}while(i<10); b;");
+  
+  i = 0; a = 0; b = 0;
+  do {
+    a++;
+    i++;
+    continue;
+    b++;
+  } while(i < 10);
+  assert(10, a, "do{a++; i++; continue; b++;}while(i<10); a;");
+  assert(0, b, "do{a++; i++; continue; b++;}while(i<10); b;");
+  
+
   int arr[2+2];
   *arr = 1; *(arr+1)=2;
   assert(3, *arr + *(arr+1), "*arr + *(arr+1)");

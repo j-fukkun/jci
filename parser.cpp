@@ -880,6 +880,7 @@ Node* stmt(){
 //      | "return" expr? ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
+//      | "do" stmt "while" "(" expr ")" ";"
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "switch" "(" expr ")" stmt
 //      | "case" const-expr ":" stmt
@@ -936,6 +937,23 @@ Node* stmt2(){
     continues.pop_back();
     return node;
   } //if "while"
+
+  if(consume("do")){
+    node = new_node(ND_DO_WHILE);
+    breaks.push_back(node);   
+    continues.push_back(node);
+    
+    node->then = stmt();
+    expect("while");
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    expect(";");
+
+    breaks.pop_back();   
+    continues.pop_back();
+    return node;
+  } //if(consume("do"))
 
   if(consume("for")){
     //"for" "(" expr? ";" expr? ";" expr? ")" stmt

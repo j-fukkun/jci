@@ -111,6 +111,12 @@ void gen(const IR* ir){
     printf("  idiv %s\n", regs[b].c_str());
     printf("  mov %s, rax\n", regs[d].c_str());
     break;
+  case IR_MOD:
+    printf("  mov rax, %s\n", regs[d].c_str());
+    printf("  cqo\n");
+    printf("  idiv %s\n", regs[b].c_str());
+    printf("  mov %s, rdx\n", regs[d].c_str());
+    break;
   case IR_PTR_ADD:
     printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
     printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());

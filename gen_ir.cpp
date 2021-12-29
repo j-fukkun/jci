@@ -133,6 +133,8 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_MUL, node);
   case ND_DIV:
     return gen_binop_IR(IR_DIV, node);
+  case ND_MOD:
+    return gen_binop_IR(IR_MOD, node);
   case ND_PTR_ADD:
     return gen_binop_IR(IR_PTR_ADD, node);
   case ND_PTR_SUB:

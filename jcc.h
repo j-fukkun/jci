@@ -78,6 +78,7 @@ enum NodeKind{
   ND_SUB, // -
   ND_MUL, // *
   ND_DIV, // /
+  ND_MOD, // %
   ND_NUM, // Integer
   ND_EQ, //==
   ND_NE, //!=
@@ -334,6 +335,7 @@ enum IRKind{
   IR_SUB, // -
   IR_MUL, // *
   IR_DIV, // /
+  IR_MOD, // %
   IR_IMM, // immediate value
   IR_MOV, // mov
   IR_EQ, //==

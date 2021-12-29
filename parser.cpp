@@ -823,6 +823,8 @@ const long eval2(Node* node, Var** v){
     return eval(node->lhs) * eval(node->rhs);
   case ND_DIV:
     return eval(node->lhs) / eval(node->rhs);
+  case ND_MOD:
+    return eval(node->lhs) % eval(node->rhs);
   case ND_BITAND:
     return eval(node->lhs) & eval(node->rhs);
   case ND_BITOR:
@@ -1347,7 +1349,7 @@ Node* add(){
 } //add()
 
 
-// mul = unary ("*" unary | "/" unary)*
+// mul = unary ("*" unary | "/" unary | "%" unary)*
 Node* mul(){
   Node* node = unary();
 
@@ -1356,9 +1358,11 @@ Node* mul(){
       node = new_binary(ND_MUL, node, unary());
     else if (consume("/"))
       node = new_binary(ND_DIV, node, unary());
+    else if(consume("%"))
+      node = new_binary(ND_MOD, node, unary());
     else
       return node;
-  }
+  } //for
 } //mul()
 
 Node* new_unary(NodeKind kind, Node* lhs){

@@ -174,8 +174,9 @@ const char* startswith_reserved(char* p){
   const char* kw[] = {"return","if","else","while","for",
 		      "int","char","short","long","void",
 		      "break","continue","switch","case","goto",
-		      "default","do","sizeof","struct", "_Bool",
-		      "bool"};
+		      "default","do","sizeof","struct", "enum",
+		      "_Bool", "bool"
+  };
   int i = 0;
   for(i = 0; i < sizeof(kw) / sizeof(*kw); i++){
     const int len = strlen(kw[i]);

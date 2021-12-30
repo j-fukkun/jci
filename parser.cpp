@@ -290,8 +290,55 @@ void skip_excess_elements() {
   skip_excess_elements2();
 } //skip_excess_elements()
 
+//enum-specifier = "enum" ident
+//               | "enum" ident? "{" enum-list? "}"
+//
+//enum-list = enum-elem ("," enum-elem)* ","?
+//enum-elem = ident ("=" const-expr)?
+Type* enum_specifier(){
+  expect("enum");
+  Type* type = enum_type();
 
-//basetype = (builtin-type | struct-decl) "*"* 
+  //read an enum tag
+  Token* tag = consume_ident();
+  if(tag && !peek("{")){
+    TagScope* sc = find_tag_inScope(tag);
+    if(!sc){
+      error_tok(tag, "unknown enum type");
+    } //if
+    if(sc->type->kind != TY_ENUM){
+      error_tok(tag, "not an enum tag");
+    } //if
+    return sc->type;
+  } //if(tag && !peek("{"))
+
+  expect("{");
+
+  //read enum-list
+  int count = 0;
+  for(;;){
+    char* name = expect_ident();
+    if(consume("=")){
+      count = const_expr();
+    } //if
+
+    VarScope* sc = push_scope(name);
+    sc->enum_type = type;
+    sc->enum_val = count++;
+
+    if(consume_end()){
+      break;
+    } //if
+    expect(",");
+  } //for
+
+  if(tag){
+    push_tag_scope(tag, type);
+  } //if
+  return type;
+} //enum_specifier()
+
+//basetype = (builtin-type | struct-decl | enum-specifier) "*"* 
 //builtin-type = "int" | "char" | "short" | "long" | "void" | "_Bool" | "bool"
 Type* basetype(){
 
@@ -319,6 +366,10 @@ Type* basetype(){
     if(peek("struct")){
       type = struct_decl();
     } //if struct
+    else if(peek("enum")){
+      type = enum_specifier();
+    } //if enum
+    
   } //if
   
   while(consume("*")){
@@ -614,7 +665,8 @@ bool is_typename(){
     || peek("_Bool") || peek("bool")
     || peek("short")
     || peek("long")
-    || peek("struct");
+    || peek("struct") || peek("enum")
+    ;
 
 } //is_typename()
 
@@ -1716,7 +1768,7 @@ Node* primary() {
       return node;
     } //if(consume("("))
 
-    //variable
+    //variable or enum constant
     /*
     Node* node = new_node(ND_VAR);
     Var* lvar = find_lvar(tok);
@@ -1734,9 +1786,12 @@ Node* primary() {
     if(sc){
       if(sc->var){
 	return new_var_node(sc->var);
-      } //if
+      } //if(sc->var)
+      if(sc->enum_type){
+	return new_num(sc->enum_val);
+      } //if(sc->enum_type)
     } //if(sc)
-    error_at(tok->str, "undefined variable");
+    error_tok(tok, "undefined variable");
     //return node;
   } //if tok
 

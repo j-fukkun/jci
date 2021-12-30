@@ -247,6 +247,7 @@ enum TypeKind{
   TY_PTR,
   TY_ARRAY,
   TY_STRUCT,
+  TY_ENUM,
 };
 
 class Type{
@@ -281,6 +282,7 @@ Type* pointer_to(Type* base);
 Type* array_of(Type* base, int size);
 const int align_to(const int n, const int align);
 Type* struct_type();
+Type* enum_type();
 void add_type(Node* node);
 
 

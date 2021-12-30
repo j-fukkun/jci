@@ -402,7 +402,7 @@ int main(){
   assert(100, t_g.x, "t_g.x = 100");
   assert(1000, t_g.y, "t_g.y = 1000");
   */
-
+  
   short lvar_short = 123;
   short lvar_short2 = lvar_short;
   long lvar_long = 456;
@@ -574,6 +574,23 @@ int main(){
     assert(1, sc_struct_test.x, "sc_struct_test.x;");
   }
   assert(0, sc_struct_test.x, "sc_struct_test.x;");
+
+  enum {zero, one, two} x;
+  assert(0, zero, "enum {zero, one, two}; zero;");
+  assert(1, one, "enum {zero, one, two}; one;");
+  assert(2, two, "enum {zero, one, two}; two;");
+  enum {five=5, six, seven};
+  assert(5, five, "enum {five=5, six, seven}; five;");
+  assert(6, six, "enum {five=5, six, seven}; six;");
+  assert(7, seven, "enum {five=5, six, seven}; seven;");
+  enum {zero, five=5, three=3, four};
+  assert(0, zero, "enum {zero, five=5, three=3, four}; zero;");
+  assert(5, five, "enum {zero, five=5, three=3, four}; five;");
+  assert(3, three, "enum {zero, five=5, three=3, four}; three;");
+  assert(4, four, "enum {zero, five=5, three=3, four}; four;");
+  assert(4, sizeof(x), "enum {zero, one, two} x; sizeof(x);");
+  enum t {zero, one, two,}; enum t y;
+  assert(4, sizeof(y), "enum t {zero, one, two,}; enum t y; sizeof(y);");
   
   printf("OK.\n");
   return 0;

@@ -49,6 +49,9 @@ Type* struct_type(){
   return t;
 } //struct_type()
 
+Type* enum_type(){
+  return new_type(TY_ENUM, 4, 4);
+} //enum_type()
 
 void add_type(Node *node) {
   if (!node || node->type){

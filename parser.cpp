@@ -64,6 +64,15 @@ VarScope* push_scope(const char* name){
   return sc;
 } //push_scope()
 
+void push_tag_scope(Token* tok, Type* type){
+  TagScope* sc = (TagScope*)calloc(1, sizeof(TagScope));
+  sc->name = strndup(tok->str, tok->len);
+  sc->next = tag_scope;
+  sc->depth = scope_depth;
+  sc->type = type;
+  tag_scope = sc;
+} //push_tag_scope()
+
 Var* find_lvar(Token* tok){
   Var* var = locals;
   for(var; var; var = var->next){
@@ -104,6 +113,15 @@ VarScope* find_var_inScope(Token* tok){
   } //for
   return nullptr;
 } //find_var_inScope()
+
+TagScope* find_tag_inScope(Token* tok){
+  for(TagScope* sc = tag_scope; sc; sc = sc->next){
+    if(strlen(sc->name) == tok->len && !strncmp(tok->str, sc->name, tok->len)){
+      return sc;
+    } //for
+  } //for
+  return nullptr;
+} //find_tag_inScope()
 
 Node* new_node(const NodeKind kind){
   Node* node = (Node*)calloc(1, sizeof(Node));
@@ -833,17 +851,48 @@ Type* struct_decl(){
 
   expect("struct");
   Token* id = consume_ident();
-  /*
+  
   if(id && !peek("{")){
     //process of tag
-  } //if
-  */
+    TagScope* sc = find_tag_inScope(id);
+    
+    if(!sc){
+      Type* type = struct_type();
+      push_tag_scope(id, type);
+      return type;
+    } //if(!sc)
+
+    if(sc->type->kind != TY_STRUCT){
+      error_tok(id, "not a struct tag");
+    } //if
+    return sc->type;
+  } //if(id && !peek("{"))
+  
 
   if(!consume("{")){
     return struct_type(); //incomplete type
   } //if
 
   Type* type;
+  TagScope* sc = nullptr;
+  if(id){
+    sc = find_tag_inScope(id);
+  } //if(id)
+
+  if(sc && sc->depth == scope_depth){
+    //If the same tag exists in the same scope,
+    //this is a redefinition
+    if(sc->type->kind != TY_STRUCT){
+      error_tok(id, "not a struct tag");
+    }
+    type = sc->type;
+  } else {
+    //register the struct type
+    type = struct_type();
+    if(id){
+      push_tag_scope(id, type);
+    } //if
+  } //if
   
   //read struct members
   Member head = {};
@@ -854,7 +903,7 @@ Type* struct_decl(){
     cur = cur->next;
   } //while
 
-  type = struct_type();
+  //type = struct_type();
   type->members = head.next;
 
   //assign offsets within the struct to members

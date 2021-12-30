@@ -567,6 +567,13 @@ int main(){
     assert(1, sc_test, "int sc_test=0;{int sc_test=1; sc_test;}");
   }
   assert(0, sc_test, "int sc_test=0;{int sc_test=1;}sc_test;");
+
+  struct SC_TEST{int x;} sc_struct_test = {0};
+  {
+    struct SC_TEST{int x;} sc_struct_test = {1};
+    assert(1, sc_struct_test.x, "sc_struct_test.x;");
+  }
+  assert(0, sc_struct_test.x, "sc_struct_test.x;");
   
   printf("OK.\n");
   return 0;

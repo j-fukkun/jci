@@ -8,6 +8,62 @@ std::vector<Node*> continues = {};
 std::vector<Node*> switches = {};
 //Node* current_switch = nullptr;
 
+//scode for local variable, global variable,
+//typedef, and enum constant
+typedef struct VarScope VarScope;
+struct VarScope{
+  VarScope* next;
+  char* name;
+  int depth;
+
+  Var* var;
+  Type* type_def;
+  Type* enum_type;
+  int enum_val;
+};
+
+//scope for struct and enum tags
+typedef struct TagScope TagScope;
+struct TagScope{
+  TagScope* next;
+  char* name;
+  int depth;
+  Type* type;
+};
+
+typedef struct Scope Scope;
+struct Scope{
+  VarScope* var_scope;
+  TagScope* tag_scope;
+};
+
+VarScope* var_scope = nullptr;
+TagScope* tag_scope = nullptr;
+int scope_depth = 0;
+
+Scope* enter_scope(){
+  Scope* sc = (Scope*)calloc(1, sizeof(Scope));
+  sc->var_scope = var_scope;
+  sc->tag_scope = tag_scope;
+  scope_depth++;
+  return sc;
+} //enter_scope()
+
+void leave_scope(Scope* sc){
+  var_scope = sc->var_scope;
+  tag_scope = sc->tag_scope;
+  scope_depth--;
+} //leave_scope()
+
+VarScope* push_scope(const char* name){
+  VarScope* sc = (VarScope*)calloc(1, sizeof(VarScope));
+  sc->name = const_cast<char*>(name);
+  sc->next = var_scope;
+  sc->depth = scope_depth;
+  var_scope = sc;
+  return sc;
+} //push_scope()
+
 Var* find_lvar(Token* tok){
   Var* var = locals;
   for(var; var; var = var->next){
@@ -39,6 +95,15 @@ Var* find_gvar(Token* tok){
   } //for
   return NULL;
 } //find_gvar()
+
+VarScope* find_var_inScope(Token* tok){
+  for(VarScope* sc = var_scope; sc; sc = sc->next){
+    if(strlen(sc->name) == tok->len && !strncmp(tok->str, sc->name, tok->len)){
+      return sc;
+    } //if
+  } //for
+  return nullptr;
+} //find_var_inScope()
 
 Node* new_node(const NodeKind kind){
   Node* node = (Node*)calloc(1, sizeof(Node));
@@ -79,6 +144,9 @@ Node* new_var_node(Var* v){
 //ローカル変数のnew
 Var* new_lvar(const char* name, Type* type){
   Var* lvar = new_var(name, type, true);
+  VarScope* vs = push_scope(name);
+  vs->var = lvar;
+  
   lvar->next = locals;
   locals = lvar;
   return lvar;
@@ -87,6 +155,9 @@ Var* new_lvar(const char* name, Type* type){
 //グローバル変数のnew
 Var* new_gvar(char* name, Type* type, const bool is_literal, char* literal){
   Var* gvar = new_var(name, type, false);
+  VarScope* vs = push_scope(name);
+  vs->var = gvar;
+  
   gvar->next = globals;
   gvar->is_literal = is_literal;
   gvar->literal = literal;
@@ -476,7 +547,7 @@ void read_func_params(Function* fn){
 
 } //read_func_params()
 
-//function = basetype ident "(" params? ")" "{" stmt* "}"
+//function = basetype ident "(" params? ")" ("{" stmt* "}" | ";")
 //params = param ("," param)*
 //param = basetype ident type_suffix
 Function* function(){
@@ -486,12 +557,21 @@ Function* function(){
   Type* type = basetype();
   //Token* tok = expect_ident();
   char* name = expect_ident();
+
+  //new_gvar(name, type, );
+  
   Function* fn = new Function();
   //fn->name = strndup(tok->str, tok->len);
   fn->name = name;
   expect("(");
+
+  Scope* sc = enter_scope();
   read_func_params(fn);
 
+  if(consume(";")){
+    leave_scope(sc);
+    return nullptr;
+  } //if
 
   //read function body
   Node head = {};
@@ -502,6 +582,8 @@ Function* function(){
     curr = curr->next;
   } //while
 
+  leave_scope(sc);
+  
   fn->node = head.next;
   fn->locals = locals; 
   return fn;  
@@ -883,7 +965,7 @@ Node* stmt(){
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "do" stmt "while" "(" expr ")" ";"
-//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "for" "(" (expr? ";" | declaration) expr? ";" expr? ")" stmt
 //      | "switch" "(" expr ")" stmt
 //      | "case" const-expr ":" stmt
 //      | "default" ":" stmt
@@ -963,12 +1045,17 @@ Node* stmt2(){
     expect("(");
     breaks.push_back(node);
     continues.push_back(node);
+    Scope* sc = enter_scope();
     
     //1個目
     if(!consume(";")){
       //先読みして、";"ではなかったとき
-      node->init = expr();
-      expect(";");
+      if(is_typename()){
+	node->init = declaration();
+      } else {
+	node->init = expr();
+	expect(";");
+      }
     } //if(!consume(";"))
 
     //2個目
@@ -986,6 +1073,7 @@ Node* stmt2(){
     
     breaks.pop_back();
     continues.pop_back();
+    leave_scope(sc);
     return node;
   } //if "for"
 
@@ -1049,12 +1137,14 @@ Node* stmt2(){
     //"{" stmt* "}"
     Node head = {};
     Node* curr = &head;
+    Scope* sc = enter_scope();
 
     while(!consume("}")){
       curr->next = stmt();
       curr = curr->next;
     } //while
 
+    leave_scope(sc);
     node = new_node(ND_BLOCK);
     node->body = head.next;
     return node;    
@@ -1570,14 +1660,19 @@ Node* primary() {
       Node* node = new_node(ND_FUNCALL);
       node->funcname = strndup(tok->str, tok->len); //文字列複製
       node->args = func_args();
+      add_type(node);
+
+      //scope check
+      
       return node;
     } //if(consume("("))
 
     //variable
+    /*
     Node* node = new_node(ND_VAR);
     Var* lvar = find_lvar(tok);
     Var* gvar = find_gvar(tok);
-
+    
     if(lvar){
       node->var = lvar;
     } else if(gvar){
@@ -1585,7 +1680,15 @@ Node* primary() {
     } else {
       error_at(tok->str, "undefined variable");
     } //if
-    return node;
+    */
+    VarScope* sc = find_var_inScope(tok);
+    if(sc){
+      if(sc->var){
+	return new_var_node(sc->var);
+      } //if
+    } //if(sc)
+    error_at(tok->str, "undefined variable");
+    //return node;
   } //if tok
 
   tok = consume_str();

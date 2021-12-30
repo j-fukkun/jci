@@ -207,6 +207,13 @@ int main(){
   }
   assert(10, a, "for(i = 0; i < 10; i++){a++; continue; b++;} a;");
   assert(0, b, "for(i = 0; i < 10; i++){a++; continue; b++;} b;");
+
+  i = 0; a = 0;
+  for(int i = 0; i < 10; i++){
+    a++;
+  }
+  assert(10, a, "a = 0; for(int i = 0; i < 10; i++){a++;} a;");
+  assert(0, i, "i = 0; for(int i = 0; i < 10; i++){a++;} i;");
   
   i = 0; a = 0;
   while(i < 10){
@@ -553,6 +560,13 @@ int main(){
 
   assert(10, *gvar24, "*gvar24");
   assert(2, *gvar25, "*gvar25");
+
+  int sc_test = 0;
+  {
+    int sc_test = 1;
+    assert(1, sc_test, "int sc_test=0;{int sc_test=1; sc_test;}");
+  }
+  assert(0, sc_test, "int sc_test=0;{int sc_test=1;}sc_test;");
   
   printf("OK.\n");
   return 0;

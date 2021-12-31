@@ -37,6 +37,12 @@ struct Scope{
   TagScope* tag_scope;
 };
 
+typedef enum {
+  TYPEDEF = 1 << 0,
+  STATIC = 1 << 1,
+  EXTERN = 1 << 2,
+} StorageClass;
+
 VarScope* var_scope = nullptr;
 TagScope* tag_scope = nullptr;
 int scope_depth = 0;
@@ -122,6 +128,16 @@ TagScope* find_tag_inScope(Token* tok){
   } //for
   return nullptr;
 } //find_tag_inScope()
+
+Type* find_typedef_inScope(Token* tok){
+  if(tok->kind == TK_IDENT){
+    VarScope* sc = find_var_inScope(tok);
+    if(sc){
+      return sc->type_def;
+    } //if
+  } //if
+  return nullptr;
+} //find_typedef_inScope()
 
 Node* new_node(const NodeKind kind){
   Node* node = (Node*)calloc(1, sizeof(Node));
@@ -338,54 +354,174 @@ Type* enum_specifier(){
   return type;
 } //enum_specifier()
 
-//basetype = (builtin-type | struct-decl | enum-specifier) "*"* 
+bool is_typename();
+//basetype = (builtin-type | struct-decl | enum-specifier | typedef-name)
 //builtin-type = "int" | "char" | "short" | "long" | "void" | "_Bool" | "bool"
-Type* basetype(){
-
-  Type* type = nullptr;
-  if(consume("int")){
-    type = int_type;
-  } else if(consume("char")){
-    type = char_type;
-  } else if(consume("short")){
-    type = short_type;
-  } else if(consume("long")){
-    type = long_type;
-  } else if(consume("void")){
-    type = void_type;
-  } else if(consume("_Bool")){
-    type = bool_type;
-  } else if(consume("bool")){
-    type = bool_type;
+Type* basetype(StorageClass* sclass){
+  if(!is_typename()){
+    error_tok(token, "type-name expected");
   } //if
 
-  if(!peek("int") && !peek("char") && !peek("void")
-     && !peek("short") && !peek("long")
-     && !peek("_Bool") && !peek("bool")
-     ){
-    if(peek("struct")){
-      type = struct_decl();
-    } //if struct
-    else if(peek("enum")){
-      type = enum_specifier();
-    } //if enum
+  enum {
+    VOID = 1 << 0,
+    BOOL = 1 << 2,
+    CHAR = 1 << 4,
+    SHORT = 1 << 6,
+    INT = 1 << 8,
+    LONG = 1 << 10,
+    OTHER = 1 << 12,
+    //SIGNED = 1 << 13,
+  };
     
+  Type* type = int_type;
+  int counter = 0;
+
+  if(sclass){
+    *sclass = (StorageClass)0;
   } //if
-  
+
+  while(is_typename()){
+    Token* tok = token;
+
+    //storage class specifier
+    if(peek("typedef")){
+      if(!sclass){
+	error_tok(tok, "storage class specifier is not allowed here");
+      } //if
+
+      if(consume("typedef")){
+	*sclass = (StorageClass)(*sclass | TYPEDEF);
+      }
+      continue;
+    } //if(peek("typedef"))
+
+    //user-defined type
+    if(!peek("int") && !peek("char") && !peek("void")
+       && !peek("short") && !peek("long")
+       && !peek("_Bool") && !peek("bool")
+       ){
+      if(counter){
+	break;
+      } //if
+
+      if(peek("struct")){
+	type = struct_decl();
+      } //if struct
+      else if(peek("enum")){
+	type = enum_specifier();
+      } //if enum
+      else {
+	type = find_typedef_inScope(token);
+	assert(type);
+	token = token->next;
+      } //else if
+
+      counter |= OTHER;
+      continue;
+    } //if
+
+    //built-in type
+    if(consume("int")){
+      //type = int_type;
+      counter += INT;
+    } else if(consume("char")){
+      //type = char_type;
+      counter += CHAR;
+    } else if(consume("short")){
+      //type = short_type;
+      counter += SHORT;
+    } else if(consume("long")){
+      //type = long_type;
+      counter += LONG;
+    } else if(consume("void")){
+      //type = void_type;
+      counter += VOID;
+    } else if(consume("_Bool")){
+      //type = bool_type;
+      counter += BOOL;
+    } else if(consume("bool")){
+      //type = bool_type;
+      counter += BOOL;
+    } //if
+
+    switch(counter){
+    case VOID:
+      type = void_type;
+      break;
+    case BOOL:
+      type = bool_type;
+      break;
+    case CHAR:
+      type = char_type;
+      break;
+    case SHORT:
+    case SHORT + INT:
+      type = short_type;
+      break;
+    case INT:
+      type = int_type;
+      break;
+    case LONG:
+    case LONG + INT:
+    case LONG + LONG:
+    case LONG + LONG + INT:
+      type = long_type;
+      break;
+    default:
+      error_tok(tok, "invalid type");
+    } //switch
+    /*
+    if(!peek("int") && !peek("char") && !peek("void")
+       && !peek("short") && !peek("long")
+       && !peek("_Bool") && !peek("bool")
+       ){
+      if(peek("struct")){
+	type = struct_decl();
+      } //if struct
+      else if(peek("enum")){
+	type = enum_specifier();
+      } //if enum
+    } //if
+    */
+  } //while
+  /*
   while(consume("*")){
     type = pointer_to(type);
   }
+  */
   return type;
 } //basetype()
+
+//declarator = "*"* ("(" declarator ")" | ident) type-suffix
+Type* declarator(Type* type, char** name){
+  while(consume("*")){
+    type = pointer_to(type);
+  } //while
+
+  if(consume("(")){
+    Type* placeholder = (Type*)calloc(1, sizeof(Type));
+    Type* new_type = declarator(placeholder, name);
+    expect(")");
+    memcpy(placeholder, type_suffix(type), sizeof(Type));
+    return new_type;
+  } //if(consume("("))
+
+  *name = expect_ident();
+  return type_suffix(type);
+} //declarator()
 
 //determine whether "global_var" or "function"
 bool is_function(){
   Token* t = token;
   bool is_func = false;
 
-  Type* type = basetype();
+  StorageClass sclass;
+  Type* type = basetype(&sclass);
+  
   if(!consume(";")){
-    char* name = expect_ident();
+    //char* name = expect_ident();
+    char* name = nullptr;
+    declarator(type, &name);
     is_func = name && consume("(");
   }
 
@@ -506,18 +642,26 @@ Initializer* gvar_initializer(Type *type) {
   return head.next;
 }
 
-//global_var = basetype ident type_suffix ("=" gvar_initializer)? ";"
+//global_var = basetype declarator type_suffix ("=" gvar_initializer)? ";"
 //           | basetype ";"
 void global_var(){
-  
-  Type* type = basetype();
+  StorageClass sclass;
+  Type* type = basetype(&sclass);
   if(consume(";")){
     return;
   }
   
   Token* tok = token;
-  char* name = expect_ident();
+  //char* name = expect_ident();
+  char* name = nullptr;
+  type = declarator(type, &name);
   type = type_suffix(type);
+
+  if(sclass == TYPEDEF){
+    expect(";");
+    push_scope(name)->type_def = type;
+    return;
+  } //if
 
   if(type->kind == TY_VOID){
     error_tok(tok, "variable declared void");
@@ -566,23 +710,25 @@ Program* program(){
 } //program()
 
 
-//param = basetype ident type_suffix
+//param = basetype declarator type_suffix
 Var* read_func_param(){
 
-  Type* type = basetype();
-  Token* tok = consume_ident();
+  Type* type = basetype(nullptr);
+  char* name = nullptr;
+  //Token* tok = consume_ident();
+  type = declarator(type, &name);
   type = type_suffix(type);
 
   if(type->kind == TY_ARRAY){
     type = pointer_to(type->base);
   } //if
   
-  if(tok){
-    char* name = strndup(tok->str, tok->len);
+  //if(tok){
+  //char* name = strndup(tok->str, tok->len);
     return new_lvar(name, type);
-  } //if(tok)
+    //} //if(tok)
 
-  return nullptr;
+  //return nullptr;
 } //read_func_param()
 
 //params = param ("," param)*
@@ -616,16 +762,18 @@ void read_func_params(Function* fn){
 
 } //read_func_params()
 
-//function = basetype ident "(" params? ")" ("{" stmt* "}" | ";")
+//function = basetype declarator "(" params? ")" ("{" stmt* "}" | ";")
 //params = param ("," param)*
-//param = basetype ident type_suffix
+//param = basetype declarator type_suffix
 Function* function(){
 
-  locals = NULL;
+  locals = nullptr;
 
-  Type* type = basetype();
-  //Token* tok = expect_ident();
-  char* name = expect_ident();
+  StorageClass sclass;
+  Type* type = basetype(&sclass);
+  //char* name = expect_ident();
+  char* name = nullptr;
+  type = declarator(type, &name);
 
   //new_gvar(name, type, );
   
@@ -666,6 +814,8 @@ bool is_typename(){
     || peek("short")
     || peek("long")
     || peek("struct") || peek("enum")
+    || peek("typedef")
+    || find_typedef_inScope(token)
     ;
 
 } //is_typename()
@@ -819,20 +969,29 @@ Node* lvar_initializer(Var* lvar){
 } //lvar_initializer()
 
 
-//declaration = basetype ident type_suffix ("=" lvar_initializer)? ";"
+//declaration = basetype declarator type_suffix ("=" lvar_initializer)? ";"
 //            | basetype ";"
 Node* declaration(){
   Token* tok = token;
-  Type* type = basetype();
+  StorageClass sclass;
+  Type* type = basetype(&sclass);
 
   if(tok = consume(";")){
     return new_node(ND_NULL);
   } //if
-  
-  char* name = expect_ident();
 
+  tok = token;
+  //char* name = expect_ident();
+  char* name = nullptr;
+  type = declarator(type, &name);
   type = type_suffix(type);
 
+  if(sclass == TYPEDEF){
+    expect(";");
+    push_scope(name)->type_def = type;
+    return new_node(ND_NULL);
+  } //if
+  
   if(type->kind == TY_VOID){
     error_tok(tok, "variable declared void");
   }
@@ -879,14 +1038,14 @@ Type* type_suffix(Type* type){
   return type;
 } //type_suffix()
 
-//struct_member = basetype ident type-suffix ";"
+//struct_member = basetype declarator type-suffix ";"
 Member* struct_member(){
   
-  Type* type = basetype();
+  Type* type = basetype(nullptr);
   Token* tok = token;
-  char* name = NULL;
-  //type = declarator(type, &name);
-  name = expect_ident();
+  char* name = nullptr;
+  type = declarator(type, &name);
+  //name = expect_ident();
   type = type_suffix(type);
   expect(";");
 

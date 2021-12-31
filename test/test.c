@@ -2,6 +2,13 @@
 //this is comment
 /*this is second comment*/
 
+int printf();
+int exit();
+int strcmp(char* p, char* q);
+int memcmp(char* p, char* q);
+
+typedef int MyInt;
+
 int assert(int expected, int actual, char* code) {
   if (expected == actual) {
     printf("%s => %d\n", code, actual);
@@ -65,11 +72,13 @@ struct TEST_G3 {
   long w;
 } t_g2 = {1, 2, 3, 4};
 
-struct Tree_G{
+typedef struct Tree_G{
   int val;
   struct Tree_G* lest;
   struct Tree_G* right;
-};
+} Tree_G;
+
+typedef struct {char a; int b;} MyType;
 
 /*
 struct TEST_G test_ret_struct(){
@@ -591,6 +600,28 @@ int main(){
   assert(4, sizeof(x), "enum {zero, one, two} x; sizeof(x);");
   enum t {zero, one, two,}; enum t y;
   assert(4, sizeof(y), "enum t {zero, one, two,}; enum t y; sizeof(y);");
+
+  {
+    typedef int T; T x=1;
+    assert(1, x, "typedef int T; T x=1; x;");
+  }
+  {
+    typedef struct {int a;} t; t x; x.a=1;
+    assert(1, x.a, "typedef struct {int a;} t; t x; x.a=1; x.a;");
+  }
+  {
+    typedef int t; t t=1;
+    assert(1, t, "typedef int t; t t=1; t;");
+  }
+  {
+    typedef struct {int a;} t; {typedef int t;} t x; x.a=2;
+    assert(2, x.a, "typedef struct {int a;} t; {typedef int t;} t x; x.a=2; x.a;");
+  }
+  {
+    MyType x = {10, 20};
+    assert(10, x.a, "MyType x = {10, 20}; x.a;");
+    assert(20, x.b, "MyType x = {10, 20}; x.b;");
+  }
   
   printf("OK.\n");
   return 0;

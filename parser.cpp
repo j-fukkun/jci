@@ -275,6 +275,15 @@ void expect_end() {
   }
 } //expect_end()
 
+Type* abstract_declarator(Type*);
+Type* basetype(StorageClass*);
+//type-name = basetype abstract-declarator type-suffix
+Type* type_name(){
+  Type* type = basetype(nullptr);
+  type = abstract_declarator(type);
+  return type_suffix(type);
+} //type_name()
+
 Initializer* emit_struct_padding(Initializer* cur, Type* parent, Member* mem){
 
   int start = mem->offset + mem->type->size;
@@ -509,6 +518,23 @@ Type* declarator(Type* type, char** name){
   *name = expect_ident();
   return type_suffix(type);
 } //declarator()
+
+//abstract-declarator = "*"* ("(" abstract-declarator ")")? type-suffix
+Type* abstract_declarator(Type* type){
+  while(consume("*")){
+    type = pointer_to(type);
+  } //while
+
+  if(consume("(")){
+    Type* placeholder = (Type*)calloc(1, sizeof(Type));
+    Type* new_type = abstract_declarator(placeholder);
+    expect(")");
+    memcpy(placeholder, type_suffix(type), sizeof(Type));
+    return new_type;
+  } //if(consume("("))
+  
+  return type_suffix(type);
+} //abstract_declarator()
 
 //determine whether "global_var" or "function"
 bool is_function(){
@@ -1723,9 +1749,12 @@ Node* new_unary(NodeKind kind, Node* lhs){
 
 //unary = ("+" | "-" | "*" | "&" | "!" | "~")? unary
 //        | ("++" | "--") unary
+//        | "sizeof" "(" type-name ")"
 //        | "sizeof" unary
 //        | postfix
 Node* unary(){
+  Token* tok;
+  
   if(consume("+")){
     //printf("unary() +\n");
     return unary();
@@ -1762,11 +1791,26 @@ Node* unary(){
     return new_unary(ND_PRE_DEC, unary());
   }
   
-  if(consume("sizeof")){
+  if(tok = consume("sizeof")){
+    if(consume("(")){
+      if(is_typename()){
+	Type* type = type_name();
+	if(type->is_incomplete){
+	  error_tok(tok, "imcomplete type");
+	} //if
+	expect(")");
+	return new_num(type->size);
+      } //if(is_typename())
+      token = tok->next;
+    } //if(consume("("))
+    
     Node* node = unary();
     add_type(node);
+    if(node->type->is_incomplete){
+      error_tok(token, "incomplete type");
+    } //if
     return new_num(node->type->size);
-  }
+  } //if(tok = consume("sizeof"))
   return postfix();
 
 } //urary()

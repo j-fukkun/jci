@@ -622,6 +622,53 @@ int main(){
     assert(10, x.a, "MyType x = {10, 20}; x.a;");
     assert(20, x.b, "MyType x = {10, 20}; x.b;");
   }
+  {
+    MyInt x = 30;
+    assert(30, x, "MyInt x = 30; x;");
+  }
+  {
+    typedef t; t x;
+    assert(4, sizeof(x), "typedef t; t x; sizeof(x);");
+  }
+  {
+    typedef typedef t; t x;
+    assert(4, sizeof(x), "typedef typedef t; t x; sizeof(x);");
+  }
+  {
+    long int x;
+    assert(8, sizeof(x), "long int x; sizeof(x);");
+  }
+  {
+    int long x;
+    assert(8, sizeof(x), "int long x; sizeof(x)");
+  }
+  {
+    long long x;
+    assert(8, sizeof(x), "long long x; sizeof(x);");
+  }
+  {
+    long int long x;
+    assert(8, sizeof(x), "long int long x; sizeof(x)");
+  }
+
+  assert(1, sizeof(char), "sizeof(char)");
+  assert(2, sizeof(short), "sizeof(short)");
+  assert(2, sizeof(short int), "sizeof(short int)");
+  assert(2, sizeof(int short), "sizeof(int short)");
+  assert(4, sizeof(int), "sizeof(int)");
+  assert(8, sizeof(long), "sizeof(long)");
+  assert(8, sizeof(long int), "sizeof(long int)");
+  assert(8, sizeof(int long), "sizeof(int long)");
+  assert(8, sizeof(char*), "sizeof(char*)");
+  assert(8, sizeof(short*), "sizeof(short*)");
+  assert(8, sizeof(int*), "sizeof(int*)");
+  assert(8, sizeof(long*), "sizeof(long*)");
+  assert(8, sizeof(int**), "sizeof(int**)");
+  assert(8, sizeof(int(*)[4]), "sizeof(int(*)[4])");
+  assert(32, sizeof(int*[4]), "sizeof(int*[4])");
+  assert(16, sizeof(int[4]), "sizeof(int[4])");
+  assert(48, sizeof(int[3][4]), "sizeof(int[3][4])");
+  assert(8, sizeof(struct {int a; int b;}), "sizeof(struct {int a; int b;})");
   
   printf("OK.\n");
   return 0;

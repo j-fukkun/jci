@@ -78,6 +78,18 @@ typedef struct Tree_G{
   struct Tree_G* right;
 } Tree_G;
 
+/*
+//compound-literal
+Tree_G *tree_g = &(Tree_G){
+  1,
+  &(Tree_G){
+    2,
+    &(Tree_G){ 3, 0, 0 },
+    &(Tree_G){ 4, 0, 0 },
+  },
+  0,
+};
+*/
 typedef struct {char a; int b;} MyType;
 
 /*
@@ -669,6 +681,19 @@ int main(){
   assert(16, sizeof(int[4]), "sizeof(int[4])");
   assert(48, sizeof(int[3][4]), "sizeof(int[3][4])");
   assert(8, sizeof(struct {int a; int b;}), "sizeof(struct {int a; int b;})");
+
+  assert(131585, (int)8590066177, "(int)8590066177");
+  assert(513, (short)8590066177, "(short)8590066177");
+  assert(1, (char)8590066177, "(char)8590066177");
+  assert(1, (_Bool)1, "(_Bool)1");
+  assert(1, (_Bool)2, "(_Bool)2");
+  assert(0, (_Bool)(char)256, "(_Bool)(char)256");
+  assert(1, (long)1, "(long)1");
+  assert(0, (long)&*(int *)0, "(long)&*(int *)0");
+  {
+    int x=5; long y=(long)&x;
+    assert(5, *(int*)y, "int x=5; long y=(long)&x; *(int*)y;");
+  }
   
   printf("OK.\n");
   return 0;

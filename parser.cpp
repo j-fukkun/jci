@@ -1725,17 +1725,17 @@ Node* add(){
 } //add()
 
 
-// mul = unary ("*" unary | "/" unary | "%" unary)*
+// mul = cast ("*" cast | "/" cast | "%" cast)*
 Node* mul(){
-  Node* node = unary();
+  Node* node = cast();
 
   for (;;) {
     if (consume("*"))
-      node = new_binary(ND_MUL, node, unary());
+      node = new_binary(ND_MUL, node, cast());
     else if (consume("/"))
-      node = new_binary(ND_DIV, node, unary());
+      node = new_binary(ND_DIV, node, cast());
     else if(consume("%"))
-      node = new_binary(ND_MOD, node, unary());
+      node = new_binary(ND_MOD, node, cast());
     else
       return node;
   } //for
@@ -1747,7 +1747,27 @@ Node* new_unary(NodeKind kind, Node* lhs){
   return node;
 } //new_unary()
 
-//unary = ("+" | "-" | "*" | "&" | "!" | "~")? unary
+//cast = "(" type-name ")" cast | unary
+Node* cast(){
+  Token* tok = token;
+
+  if(consume("(")){
+    if(is_typename()){
+      Type* type = type_name();
+      expect(")");
+      if(!consume("{")){
+	Node* node = new_unary(ND_CAST, cast());
+	add_type(node->lhs);
+	node->type = type;
+	return node;
+      } //if(!consume("{"))
+    } //if(is_typename())
+    token = tok;
+  } //if(consume("("))
+  return unary();
+} //cast()
+
+//unary = ("+" | "-" | "*" | "&" | "!" | "~")? cast
 //        | ("++" | "--") unary
 //        | "sizeof" "(" type-name ")"
 //        | "sizeof" unary
@@ -1756,30 +1776,29 @@ Node* unary(){
   Token* tok;
   
   if(consume("+")){
-    //printf("unary() +\n");
-    return unary();
+    return cast();
   }
   if(consume("-")){
-    return new_binary(ND_SUB, new_num(0), unary());
+    return new_binary(ND_SUB, new_num(0), cast());
   }
   if(consume("*")){
     Node* node = new_node(ND_DEREF);
-    node->lhs = unary();
+    node->lhs = cast();
     return node;
   }
   if(consume("&")){
     Node* node = new_node(ND_ADDR);
-    node->lhs = unary();
+    node->lhs = cast();
     return node;
   }
 
   if(consume("!")){
-    Node* node = new_unary(ND_NOT, unary());
+    Node* node = new_unary(ND_NOT, cast());
     return node;
   }
 
   if(consume("~")){
-    Node* node = new_unary(ND_BITNOT, unary());
+    Node* node = new_unary(ND_BITNOT, cast());
     return node;
   }
 

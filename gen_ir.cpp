@@ -135,6 +135,13 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_DIV, node);
   case ND_MOD:
     return gen_binop_IR(IR_MOD, node);
+  case ND_CAST: {
+    Reg* temp_a  = gen_expr_IR(node->lhs);
+    IR* temp_ir = new_ir(IR_CAST);
+    temp_ir->a = temp_a;
+    temp_ir->type = node->type;
+    return temp_ir->a;
+  }
   case ND_PTR_ADD:
     return gen_binop_IR(IR_PTR_ADD, node);
   case ND_PTR_SUB:

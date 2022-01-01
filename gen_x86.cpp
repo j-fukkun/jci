@@ -81,6 +81,26 @@ void load(const IR* ir){
   
 }
 
+void truncate(const IR* ir){
+  Type* type = ir->type;
+  const int a = ir->a ? ir->a->rn : 0;
+  
+  if(type->kind == TY_BOOL){
+    printf("  cmp %s, 0\n", regs[a].c_str());
+    printf("  setne %s\n", regs8[a].c_str());
+  } //if
+
+  if(type->size == 1){
+    printf("  movsx %s, %s\n", regs[a].c_str(), regs8[a].c_str());
+  } else if(type->size == 2){
+    printf("  movsx %s, %s\n", regs[a].c_str(), regs16[a].c_str());
+  } else if(type->size == 4){
+    printf("  movsxd %s, %s\n", regs[a].c_str(), regs32[a].c_str());
+  } else if(type->size == 8){
+    printf("  mov %s, %s\n", regs[a].c_str(), regs[a].c_str());
+  } //if
+  
+} //truncate()
 
 void gen(const IR* ir){
   const int d = ir->d ? ir->d->rn : 0;
@@ -116,6 +136,9 @@ void gen(const IR* ir){
     printf("  cqo\n");
     printf("  idiv %s\n", regs[b].c_str());
     printf("  mov %s, rdx\n", regs[d].c_str());
+    break;
+  case IR_CAST:
+    truncate(ir);
     break;
   case IR_PTR_ADD:
     printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);

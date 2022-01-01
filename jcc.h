@@ -120,6 +120,7 @@ enum NodeKind{
   ND_BITAND, //bit and &
   ND_BITXOR, //bit xor ^
   ND_BITNOT, //bit not ~
+  ND_CAST, //cast
   ND_NULL,
 };
 
@@ -320,6 +321,7 @@ Node* new_sub(Node* lhs, Node* rhs, Token* tok);
 Node* add();
 Node* mul();
 Node* new_unary(NodeKind kind, Node* lhs);
+Node* cast();
 Node* unary();
 Node* postfix();
 Node* primary();
@@ -365,6 +367,7 @@ enum IRKind{
   IR_BITOR, //bitor |
   IR_BITAND, //bitand &
   IR_BITXOR, //bitxor ^
+  IR_CAST, //cast
 };
 
 class Reg{

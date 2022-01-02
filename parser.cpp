@@ -1878,7 +1878,7 @@ Node* struct_ref(Node* lhs){
   
   add_type(lhs);
   if(lhs->type->kind != TY_STRUCT){
-    //error_tok(lhs->tok, "this is not a struct");
+    error_tok(/*lhs->tok*/token, "this is not a struct");
     ;
   } //if
 
@@ -1894,10 +1894,48 @@ Node* struct_ref(Node* lhs){
   
 } //struct_ref()
 
-//postfix = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
+static char* new_label();
+//compound-literal = "(" type-name ")" "{" (gvar-initialier | lvar-initializer) "}"
+Node* compound_literal(){
+  
+  Token* tok = token;
+  if(!consume("(") || !is_typename()){
+    token = tok;
+    return nullptr;
+  } //if(!consume("(") || !is_typename())
+
+  Type* type = type_name();
+  expect(")");
+
+  if(!peek("{")){
+    token = tok;
+    return nullptr;
+  } //if(!peek("{"))
+
+  if(scope_depth == 0){
+    Var* var = new_gvar(new_label(), type, false, nullptr);
+    var->initializer = gvar_initializer(type);
+    return new_var_node(var);
+  } //if(scope_depth == 0)
+
+  Var* var = new_lvar(new_label(), type);
+  Node* node = new_var_node(var);
+  node->init = lvar_initializer(var);
+  return node;
+  
+} //compound_literal()
+
+//postfix = compound-literal
+//        | primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
 Node* postfix(){
 
-  Node* node = primary();
+  Node* node = compound_literal();
+  if(node){
+    add_type(node);
+    return node;
+  }
+  
+  node = primary();
   Token* t;
   
   for(;;){

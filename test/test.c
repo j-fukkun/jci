@@ -74,13 +74,13 @@ struct TEST_G3 {
 
 typedef struct Tree_G{
   int val;
-  struct Tree_G* lest;
+  struct Tree_G* left;
   struct Tree_G* right;
 } Tree_G;
 
-/*
+
 //compound-literal
-Tree_G *tree_g = &(Tree_G){
+Tree_G* tree_g = &(Tree_G){
   1,
   &(Tree_G){
     2,
@@ -89,7 +89,7 @@ Tree_G *tree_g = &(Tree_G){
   },
   0,
 };
-*/
+
 typedef struct {char a; int b;} MyType;
 
 /*
@@ -694,6 +694,12 @@ int main(){
     int x=5; long y=(long)&x;
     assert(5, *(int*)y, "int x=5; long y=(long)&x; *(int*)y;");
   }
+
+  //compound-literal test
+  assert(1, tree_g->val, "tree_g->val");
+  assert(2, tree_g->left->val, "tree_g->left->val");
+  assert(3, tree_g->left->left->val, "tree_g->left->left->val");
+  assert(4, tree_g->left->right->val, "tree_g->left->right->val");
   
   printf("OK.\n");
   return 0;

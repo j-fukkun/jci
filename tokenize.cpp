@@ -187,6 +187,50 @@ const char* startswith_reserved(char* p){
   return NULL;
 } //startswith_reserved()
 
+char get_escape_char(char c){
+  
+  switch(c){
+  case 'a': return '\a';
+  case 'b': return '\b';
+  case 't': return '\t';
+  case 'n': return '\n';
+  case 'v': return '\v';
+  case 'f': return '\f';
+  case 'r': return '\r';
+  case 'e': return 27;
+  case '0': return 0;
+  default: return c;
+  } //switch
+  
+} //get_escape_char()
+
+Token* read_char_literal(Token* cur, char* start){
+
+  char* p = start + 1;
+  if(*p == '\0'){
+    error_at(start, "unclosed character literal");
+  } //if
+
+  char c;
+  if(*p == '\\'){
+    p++;
+    c = get_escape_char(*p++);
+  } else {
+    c = *p++;
+  } //if
+
+  if(*p != '\''){
+    error_at(start, "character literal is too long");
+  } //if
+
+  p++;
+  Token* tok = new_token(TK_NUM, cur, start, p - start);
+  tok->val = c;
+  //tok->type = int_type;
+  return tok;
+  
+} //read_char_literal()
+
 Token* read_string(Token* cur, char* start){
 
   char* p = start + 1;
@@ -203,9 +247,27 @@ Token* read_string(Token* cur, char* start){
     if(*p == '"'){
       break;
     }
+    /*
+    if(*p == '\\'){
+      p++;
+      buf[len++] = get_escape_char(*p++);
+    } else {
+      buf[len++] = *p++;
+    } //if
+    */
+
+    if(*p == '\\' && *(p+1) == '\"'){
+      buf[len++] = '\\';
+      ++p;
+      buf[len++] = '\"';
+      ++p;
+      continue;
+    } //if
+    
     buf[len] = *p;
     ++len;
     ++p;
+    
   } //for
 
   Token* tok = new_token(TK_STR, cur, start, p-start+1);
@@ -256,7 +318,15 @@ Token* tokenize(){
     if(*p == '"'){
       cur = read_string(cur, p);
       p += cur->len;
+      continue;
     } //if(*p == '"')
+
+    //character literal
+    if(*p == '\''){
+      cur = read_char_literal(cur, p);
+      p += cur->len;
+      continue;
+    } //if(*p == '\'')
 
     //複数文字を区切る
     //multi-letter

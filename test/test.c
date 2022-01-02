@@ -137,7 +137,7 @@ struct {int a[2];} gvar12[2] = {{{1, 2}}};
 struct {int a[2];} gvar13[2] = {{1, 2}, 3, 4};
 struct {int a[2];} gvar14[2] = {1, 2, 3, 4};
 char* gvar15 = {"foo"};
-//char gvar16[][4] = {'f','o','o','b','a','r',0};
+char gvar16[][4] = {'f','o','o', 0, 'b','a','r', 0};
 char gvar17[] = "foobar";
 char gvar18[10] = "foobar";
 char gvar19[3] = "foobar";
@@ -561,7 +561,8 @@ int main(){
   //assert(4, gvar14[1].a[1], "gvar14[1].a[1]");
 
   assert(0, strcmp(gvar15, "foo"), "strcmp(gvar15, foo)");
-  //assert gvar16
+  assert(0, strcmp(gvar16[0], "foo"), "strcmp(gvar16[0], \"foo\")");
+  assert(0, strcmp(gvar16[1], "bar"), "strcmp(gvar16[1], \"bar\")");
 
   assert(7, sizeof(gvar17), "sizeof(gvar17)");
   assert(10, sizeof(gvar18), "sizeof(gvar18)");

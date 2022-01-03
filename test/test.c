@@ -230,7 +230,7 @@ int main(){
   assert(0, b, "for(i = 0; i < 10; i++){a++; continue; b++;} b;");
 
   i = 0; a = 0;
-  for(int i = 0; i < 10; i++){
+  for(int i_for = 0; i_for < 10; i_for++){
     a++;
   }
   assert(10, a, "a = 0; for(int i = 0; i < 10; i++){a++;} a;");
@@ -601,19 +601,22 @@ int main(){
   assert(0, zero, "enum {zero, one, two}; zero;");
   assert(1, one, "enum {zero, one, two}; one;");
   assert(2, two, "enum {zero, one, two}; two;");
+  assert(4, sizeof(x), "enum {zero, one, two} x; sizeof(x);");
   enum {five=5, six, seven};
   assert(5, five, "enum {five=5, six, seven}; five;");
   assert(6, six, "enum {five=5, six, seven}; six;");
   assert(7, seven, "enum {five=5, six, seven}; seven;");
-  enum {zero, five=5, three=3, four};
-  assert(0, zero, "enum {zero, five=5, three=3, four}; zero;");
-  assert(5, five, "enum {zero, five=5, three=3, four}; five;");
-  assert(3, three, "enum {zero, five=5, three=3, four}; three;");
-  assert(4, four, "enum {zero, five=5, three=3, four}; four;");
-  assert(4, sizeof(x), "enum {zero, one, two} x; sizeof(x);");
-  enum t {zero, one, two,}; enum t y;
-  assert(4, sizeof(y), "enum t {zero, one, two,}; enum t y; sizeof(y);");
-
+  {
+    enum {zero, five=5, three=3, four};
+    assert(0, zero, "enum {zero, five=5, three=3, four}; zero;");
+    assert(5, five, "enum {zero, five=5, three=3, four}; five;");
+    assert(3, three, "enum {zero, five=5, three=3, four}; three;");
+    assert(4, four, "enum {zero, five=5, three=3, four}; four;");
+  }
+  {
+    enum t {zero, one, two,}; enum t y;
+    assert(4, sizeof(y), "enum t {zero, one, two,}; enum t y; sizeof(y);");
+  }
   {
     typedef int T; T x=1;
     assert(1, x, "typedef int T; T x=1; x;");
@@ -623,8 +626,8 @@ int main(){
     assert(1, x.a, "typedef struct {int a;} t; t x; x.a=1; x.a;");
   }
   {
-    typedef int t; t t=1;
-    assert(1, t, "typedef int t; t t=1; t;");
+    typedef int T; T t=1;
+    assert(1, t, "typedef int T; T t=1; t;");
   }
   {
     typedef struct {int a;} t; {typedef int t;} t x; x.a=2;
@@ -701,6 +704,8 @@ int main(){
   assert(2, tree_g->left->val, "tree_g->left->val");
   assert(3, tree_g->left->left->val, "tree_g->left->left->val");
   assert(4, tree_g->left->right->val, "tree_g->left->right->val");
+
+  //{int x = 0; int x = 1; printf("x = %d\n", x);} //redeclaration
   
   printf("OK.\n");
   return 0;

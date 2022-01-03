@@ -12,7 +12,7 @@ std::vector<Node*> switches = {};
 //typedef, and enum constant
 typedef struct VarScope VarScope;
 struct VarScope{
-  VarScope* next;
+  //VarScope* next;
   char* name;
   int depth;
 
@@ -25,16 +25,28 @@ struct VarScope{
 //scope for struct and enum tags
 typedef struct TagScope TagScope;
 struct TagScope{
-  TagScope* next;
+  //TagScope* next;
   char* name;
   int depth;
   Type* type;
 };
 
 typedef struct Scope Scope;
-struct Scope{
-  VarScope* var_scope;
-  TagScope* tag_scope;
+class Scope{
+public:
+  Scope* next;
+  //VarScope* var_scope;
+  //TagScope* tag_scope;
+  std::unordered_map<std::string, VarScope*> vars;
+  std::unordered_map<std::string, TagScope*> tags;
+
+public:
+  Scope(){
+    next = nullptr;
+    vars = {};
+    tags = {};
+  }
+  ~Scope(){}
 };
 
 typedef enum {
@@ -43,40 +55,61 @@ typedef enum {
   EXTERN = 1 << 2,
 } StorageClass;
 
-VarScope* var_scope = nullptr;
-TagScope* tag_scope = nullptr;
-int scope_depth = 0;
+//VarScope* var_scope = nullptr;
+//TagScope* tag_scope = nullptr;
+//Scope* scope = &(Scope){};
+//Scope* scope = (Scope*)calloc(1, sizeof(Scope));
+Scope* scope = new Scope();
+static int scope_depth = 0;
+
+static int lvar_tmp_label = 0;
 
 Scope* enter_scope(){
-  Scope* sc = (Scope*)calloc(1, sizeof(Scope));
-  sc->var_scope = var_scope;
-  sc->tag_scope = tag_scope;
+  //Scope* sc = (Scope*)calloc(1, sizeof(Scope));
+  Scope* sc = new Scope();
+  //sc->var_scope = var_scope;
+  //sc->tag_scope = tag_scope;
   scope_depth++;
+  sc->next = scope;
+  scope = sc;
   return sc;
 } //enter_scope()
 
 void leave_scope(Scope* sc){
-  var_scope = sc->var_scope;
-  tag_scope = sc->tag_scope;
+  //var_scope = sc->var_scope;
+  //tag_scope = sc->tag_scope;
   scope_depth--;
+  scope = scope->next;
 } //leave_scope()
 
+VarScope* find_var_inCurrentScope(const std::string& name);
 VarScope* push_scope(const char* name){
-  VarScope* sc = (VarScope*)calloc(1, sizeof(VarScope));
+  //VarScope* sc = (VarScope*)calloc(1, sizeof(VarScope));
+  VarScope* sc = new VarScope();
   sc->name = const_cast<char*>(name);
-  sc->next = var_scope;
+  //sc->next = var_scope;
   sc->depth = scope_depth;
-  var_scope = sc;
+  //var_scope = sc;
+  auto pair = std::make_pair(std::string(sc->name), sc);
+  
+  if(find_var_inCurrentScope(pair.first) != nullptr){
+    //redeclaration
+    error_tok(token, "redeclaration");
+  }
+  
+  scope->vars.insert(pair);
+  //printf("%s is pushed to current scope %d\n", sc->name, scope_depth);
   return sc;
 } //push_scope()
 
 void push_tag_scope(Token* tok, Type* type){
   TagScope* sc = (TagScope*)calloc(1, sizeof(TagScope));
   sc->name = strndup(tok->str, tok->len);
-  sc->next = tag_scope;
+  //sc->next = tag_scope;
   sc->depth = scope_depth;
   sc->type = type;
-  tag_scope = sc;
+  //tag_scope = sc;
+  scope->tags.insert(std::make_pair(std::string(sc->name), sc));
 } //push_tag_scope()
 
 Var* find_lvar(Token* tok){
@@ -112,19 +145,44 @@ Var* find_gvar(Token* tok){
 } //find_gvar()
 
 VarScope* find_var_inScope(Token* tok){
-  for(VarScope* sc = var_scope; sc; sc = sc->next){
+  for(Scope* sc = scope; sc; sc = sc->next){
+    /*
     if(strlen(sc->name) == tok->len && !strncmp(tok->str, sc->name, tok->len)){
       return sc;
     } //if
+    */    
+    auto vsc_iter
+      = sc->vars.find(std::string(strndup(tok->str, tok->len)));
+    if(vsc_iter != sc->vars.end()){
+      return vsc_iter->second;
+    } //if
   } //for
   return nullptr;
-} //find_var_inScope()
+} //find_var_inScope(Token* tok)
+
+VarScope* find_var_inCurrentScope(const std::string& name){
+  //for(Scope* sc = scope; sc; sc = sc->next){
+  
+    auto vsc_iter = scope->vars.find(name);
+    if(vsc_iter != scope->vars.end()){
+      return vsc_iter->second;
+    } //if
+    //} //for sc
+  return nullptr;
+} //find_var_inCurrentScope(const std::string& name)
 
 TagScope* find_tag_inScope(Token* tok){
-  for(TagScope* sc = tag_scope; sc; sc = sc->next){
+  for(Scope* sc = scope; sc; sc = sc->next){
+    /*
     if(strlen(sc->name) == tok->len && !strncmp(tok->str, sc->name, tok->len)){
       return sc;
-    } //for
+    } //if
+    */
+    auto tsc_iter
+      = sc->tags.find(std::string(strndup(tok->str, tok->len)));
+    if(tsc_iter != sc->tags.end()){
+      return tsc_iter->second;
+    } //if
   } //for
   return nullptr;
 } //find_tag_inScope()
@@ -1511,7 +1569,9 @@ Node* new_assign_eq(NodeKind k, Node* lhs, Node* rhs){
   std::vector<Node*> v;
 
   //T* t = &a;
-  Var* var = new_lvar("tmp", pointer_to(lhs->type));
+  char str[10];
+  snprintf(str, 10, "tmp_%d", lvar_tmp_label++);
+  Var* var = new_lvar(str, pointer_to(lhs->type));
   Node* node = new_binary(ND_ASSIGN, new_var_node(var), new_unary(ND_ADDR, lhs));
   add_type(node);
   v.push_back(node);
@@ -1840,8 +1900,11 @@ Node* new_post_inc(Node* n, const int imm){
   add_type(n);
 
   std::vector<Node*> vec;
-  Var* t = new_lvar("tmp", pointer_to(n->type));
-  Var* t2 = new_lvar("tmp2", n->type);
+  char str[10], str2[10];
+  snprintf(str, 10, "tmp_%d", lvar_tmp_label++);
+  Var* t = new_lvar(str, pointer_to(n->type));
+  snprintf(str2, 10, "tmp_%d", lvar_tmp_label++);
+  Var* t2 = new_lvar(str2, n->type);
 
   //T* t = &i;
   vec.push_back(new_binary(ND_ASSIGN, new_var_node(t), new_unary(ND_ADDR, n)));

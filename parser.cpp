@@ -710,7 +710,7 @@ Initializer* gvar_initializer2(Initializer* cur, Type* type){
   
   
   const bool open = consume("{");
-  Node* expression = logor();
+  Node* expression = conditional();
   if(open){
     expect_end();
   }
@@ -1239,7 +1239,7 @@ Type* struct_decl(const bool pushToScope){
 
 
 const long const_expr(){
-  return eval(logor());
+  return eval(conditional());
 } //const_expr()
 
 const long eval(Node* node){
@@ -1292,6 +1292,10 @@ const long eval2(Node* node, Var** v){
     return eval(node->lhs) || eval(node->rhs);
   case ND_COMMA:
     return eval(node->rhs);
+  case ND_TERNARY:
+    return eval(node->cond)
+      ? eval(node->then)
+      : eval(node->els);
   case ND_NUM:
     return node->val;
   case ND_ADDR:
@@ -1609,11 +1613,11 @@ Node* new_assign_eq(NodeKind k, Node* lhs, Node* rhs){
 } //new_assign_eq()
 
 
-//assign = logor (assign-op assign)?
+//assign = conditional (assign-op assign)?
 //assign-op = "=" | "+=" | "-=" | "*=" | "/=" 
 Node* assign(){
-  //Node* node = equality();
-  Node* node = logor();
+  //Node* node = logor();
+  Node* node = conditional();
   if(consume("=")){
     return new_binary(ND_ASSIGN, node, assign());
   } //if
@@ -1646,6 +1650,22 @@ Node* assign(){
   
   return node;
 } //assign()
+
+//conditional = logor ("?" expr ":" conditional)?
+Node* conditional(){
+  Node* node = logor();
+  Token* tok = consume("?");
+  if(!tok){
+    return node;
+  } //if
+
+  Node* ter = new_node(ND_TERNARY);
+  ter->cond = node;
+  ter->then = expr();
+  expect(":");
+  ter->els = conditional();
+  return ter;
+} //conditional()
 
 //logor = logand ("||" logand)*
 Node* logor(){

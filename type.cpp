@@ -102,8 +102,6 @@ void add_type(Node *node) {
   case ND_ASSIGN:
   case ND_PRE_INC:
   case ND_PRE_DEC:
-    //case ND_POST_INC:
-    //case ND_POST_DEC:
   case ND_SHL:
   case ND_SHR:
   case ND_BITNOT:
@@ -111,6 +109,12 @@ void add_type(Node *node) {
     return;
   case ND_VAR:
     node->type = node->var->type;
+    return;
+  case ND_COMMA:
+    node->type = node->rhs->type;
+    return;
+  case ND_TERNARY:
+    node->type = node->then->type;
     return;
   case ND_MEMBER:
     node->type = node->member->type;

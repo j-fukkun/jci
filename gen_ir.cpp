@@ -164,6 +164,24 @@ Reg* gen_expr_IR(Node* node){
     gen_expr_IR(node->lhs);
     return gen_expr_IR(node->rhs);
   } //ND_COMMA
+  case ND_TERNARY: {
+    BasicBlock* then = new_bb();
+    BasicBlock* els = new_bb();
+    BasicBlock* last = new_bb();
+
+    br(gen_expr_IR(node->cond), then, els);
+
+    out = then;
+    jmp_arg(last, gen_expr_IR(node->then));
+
+    out = els;
+    jmp_arg(last, gen_expr_IR(node->els));
+
+    out = last;
+    out->param = new_reg();
+    return out->param;
+    
+  } //ND_TERNARY
   case ND_LOGOR: {
     BasicBlock* bb = new_bb();
     BasicBlock* set0 = new_bb();

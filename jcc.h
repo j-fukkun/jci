@@ -100,8 +100,6 @@ enum NodeKind{
   ND_PTR_DIFF, //pointer difference
   ND_PRE_INC, //++a
   ND_PRE_DEC, //--a
-  //ND_POST_INC, //a++
-  //ND_POST_DEC, //a--
   ND_STMT_EXPR, //stmt ...
   ND_EXPR_STMT, //expr ...
   ND_LOGOR, //||
@@ -121,7 +119,8 @@ enum NodeKind{
   ND_BITXOR, //bit xor ^
   ND_BITNOT, //bit not ~
   ND_CAST, //cast
-  ND_COMMA, //expr, expr 
+  ND_COMMA, //expr, expr
+  ND_TERNARY, //? :
   ND_NULL,
 };
 
@@ -309,6 +308,7 @@ Node* stmt();
 Node* stmt2();
 Node* expr();
 Node* assign();
+Node* conditional();
 Node* logor();
 Node* logand();
 Node* bit_or();

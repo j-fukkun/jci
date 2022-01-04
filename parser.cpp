@@ -1,7 +1,7 @@
 #include "jcc.h"
 
-Var* locals = NULL;
-Var* globals = NULL;
+Var* locals = nullptr;
+Var* globals = nullptr;
 int nlabel = 1;
 std::vector<Node*> breaks = {};
 std::vector<Node*> continues = {};
@@ -12,7 +12,6 @@ std::vector<Node*> switches = {};
 //typedef, and enum constant
 typedef struct VarScope VarScope;
 struct VarScope{
-  //VarScope* next;
   char* name;
   int depth;
 
@@ -25,7 +24,6 @@ struct VarScope{
 //scope for struct and enum tags
 typedef struct TagScope TagScope;
 struct TagScope{
-  //TagScope* next;
   char* name;
   int depth;
   Type* type;
@@ -35,8 +33,6 @@ typedef struct Scope Scope;
 class Scope{
 public:
   Scope* next;
-  //VarScope* var_scope;
-  //TagScope* tag_scope;
   std::unordered_map<std::string, VarScope*> vars;
   std::unordered_map<std::string, TagScope*> tags;
 
@@ -55,20 +51,14 @@ typedef enum {
   EXTERN = 1 << 2,
 } StorageClass;
 
-//VarScope* var_scope = nullptr;
-//TagScope* tag_scope = nullptr;
-//Scope* scope = &(Scope){};
-//Scope* scope = (Scope*)calloc(1, sizeof(Scope));
+
 Scope* scope = new Scope();
 static int scope_depth = 0;
-
 static int lvar_tmp_label = 0;
 
 Scope* enter_scope(){
   //Scope* sc = (Scope*)calloc(1, sizeof(Scope));
   Scope* sc = new Scope();
-  //sc->var_scope = var_scope;
-  //sc->tag_scope = tag_scope;
   scope_depth++;
   sc->next = scope;
   scope = sc;
@@ -76,8 +66,6 @@ Scope* enter_scope(){
 } //enter_scope()
 
 void leave_scope(Scope* sc){
-  //var_scope = sc->var_scope;
-  //tag_scope = sc->tag_scope;
   scope_depth--;
   scope = scope->next;
 } //leave_scope()
@@ -87,29 +75,33 @@ VarScope* push_scope(const char* name){
   //VarScope* sc = (VarScope*)calloc(1, sizeof(VarScope));
   VarScope* sc = new VarScope();
   sc->name = const_cast<char*>(name);
-  //sc->next = var_scope;
   sc->depth = scope_depth;
-  //var_scope = sc;
   auto pair = std::make_pair(std::string(sc->name), sc);
   
   if(find_var_inCurrentScope(pair.first) != nullptr){
     //redeclaration
-    error_tok(token, "redeclaration");
+    error_tok(token, "redeclaration of variable");
   }
   
   scope->vars.insert(pair);
-  //printf("%s is pushed to current scope %d\n", sc->name, scope_depth);
   return sc;
 } //push_scope()
 
+TagScope* find_tag_inCurrentScope(const std::string& name);
 void push_tag_scope(Token* tok, Type* type){
-  TagScope* sc = (TagScope*)calloc(1, sizeof(TagScope));
+  //TagScope* sc = (TagScope*)calloc(1, sizeof(TagScope));
+  TagScope* sc = new TagScope();
   sc->name = strndup(tok->str, tok->len);
-  //sc->next = tag_scope;
   sc->depth = scope_depth;
   sc->type = type;
-  //tag_scope = sc;
-  scope->tags.insert(std::make_pair(std::string(sc->name), sc));
+  auto pair = std::make_pair(std::string(sc->name), sc);
+
+  if(find_tag_inCurrentScope(pair.first) != nullptr){
+    //redeclaration
+    error_tok(tok, "redeclaration of tag");
+  } //if
+  
+  scope->tags.insert(pair);
 } //push_tag_scope()
 
 Var* find_lvar(Token* tok){
@@ -161,13 +153,11 @@ VarScope* find_var_inScope(Token* tok){
 } //find_var_inScope(Token* tok)
 
 VarScope* find_var_inCurrentScope(const std::string& name){
-  //for(Scope* sc = scope; sc; sc = sc->next){
   
     auto vsc_iter = scope->vars.find(name);
     if(vsc_iter != scope->vars.end()){
       return vsc_iter->second;
     } //if
-    //} //for sc
   return nullptr;
 } //find_var_inCurrentScope(const std::string& name)
 
@@ -186,6 +176,16 @@ TagScope* find_tag_inScope(Token* tok){
   } //for
   return nullptr;
 } //find_tag_inScope()
+
+TagScope* find_tag_inCurrentScope(const std::string& name){
+
+  auto tsc_iter = scope->tags.find(name);
+  if(tsc_iter != scope->tags.end()){
+    return tsc_iter->second;
+  } //if
+  return nullptr;
+  
+} //find_tag_inCurrentScope()
 
 Type* find_typedef_inScope(Token* tok){
   if(tok->kind == TK_IDENT){
@@ -334,7 +334,8 @@ void expect_end() {
 } //expect_end()
 
 Type* abstract_declarator(Type*);
-Type* basetype(StorageClass*);
+Type* basetype(StorageClass*,
+	       const bool pushToScope = true);
 //type-name = basetype abstract-declarator type-suffix
 Type* type_name(){
   Type* type = basetype(nullptr);
@@ -378,7 +379,7 @@ void skip_excess_elements() {
 //
 //enum-list = enum-elem ("," enum-elem)* ","?
 //enum-elem = ident ("=" const-expr)?
-Type* enum_specifier(){
+Type* enum_specifier(const bool pushToScope){
   expect("enum");
   Type* type = enum_type();
 
@@ -405,6 +406,10 @@ Type* enum_specifier(){
       count = const_expr();
     } //if
 
+    if(!pushToScope){
+      continue;
+    } //if
+    
     VarScope* sc = push_scope(name);
     sc->enum_type = type;
     sc->enum_val = count++;
@@ -415,7 +420,7 @@ Type* enum_specifier(){
     expect(",");
   } //for
 
-  if(tag){
+  if(tag && pushToScope){
     push_tag_scope(tag, type);
   } //if
   return type;
@@ -424,7 +429,8 @@ Type* enum_specifier(){
 bool is_typename();
 //basetype = (builtin-type | struct-decl | enum-specifier | typedef-name)
 //builtin-type = "int" | "char" | "short" | "long" | "void" | "_Bool" | "bool"
-Type* basetype(StorageClass* sclass){
+Type* basetype(StorageClass* sclass,
+	       const bool pushToScope){
   if(!is_typename()){
     error_tok(token, "type-name expected");
   } //if
@@ -472,10 +478,10 @@ Type* basetype(StorageClass* sclass){
       } //if
 
       if(peek("struct")){
-	type = struct_decl();
+	type = struct_decl(pushToScope);
       } //if struct
       else if(peek("enum")){
-	type = enum_specifier();
+	type = enum_specifier(pushToScope);
       } //if enum
       else {
 	type = find_typedef_inScope(token);
@@ -600,7 +606,7 @@ bool is_function(){
   bool is_func = false;
 
   StorageClass sclass;
-  Type* type = basetype(&sclass);
+  Type* type = basetype(&sclass, false);
   
   if(!consume(";")){
     //char* name = expect_ident();
@@ -704,7 +710,7 @@ Initializer* gvar_initializer2(Initializer* cur, Type* type){
   
   
   const bool open = consume("{");
-  Node* expression = expr();
+  Node* expression = logor();
   if(open){
     expect_end();
   }
@@ -1142,7 +1148,7 @@ Member* struct_member(){
 } //struct_member()
 
 //struct-decl = "struct" ident? ("{" struct-member "}")?
-Type* struct_decl(){
+Type* struct_decl(const bool pushToScope){
 
   expect("struct");
   Token* id = consume_ident();
@@ -1153,7 +1159,9 @@ Type* struct_decl(){
     
     if(!sc){
       Type* type = struct_type();
-      push_tag_scope(id, type);
+      if(pushToScope){
+	push_tag_scope(id, type);
+      } //if
       return type;
     } //if(!sc)
 
@@ -1174,17 +1182,22 @@ Type* struct_decl(){
     sc = find_tag_inScope(id);
   } //if(id)
 
-  if(sc && sc->depth == scope_depth){
+  //if(sc && sc->depth == scope_depth){
+  if(sc && find_tag_inCurrentScope(std::string(sc->name))){
     //If the same tag exists in the same scope,
     //this is a redefinition
+    //recursive definition
     if(sc->type->kind != TY_STRUCT){
       error_tok(id, "not a struct tag");
     }
+    
+    //error_tok(id, "redeclaration of struct tag");
     type = sc->type;
+    
   } else {
     //register the struct type
     type = struct_type();
-    if(id){
+    if(id && pushToScope){
       push_tag_scope(id, type);
     } //if
   } //if
@@ -1277,6 +1290,8 @@ const long eval2(Node* node, Var** v){
     return eval(node->lhs) && eval(node->rhs);
   case ND_LOGOR:
     return eval(node->lhs) || eval(node->rhs);
+  case ND_COMMA:
+    return eval(node->rhs);
   case ND_NUM:
     return node->val;
   case ND_ADDR:
@@ -1556,9 +1571,14 @@ Node* stmt2(){
   
 } //stmt2()
 
-// expr = assign
+// expr = assign ("," assign)*
 Node *expr(){
-  return assign();
+  Node* node = assign();
+  while(consume(",")){
+    node = new_expr(ND_EXPR_STMT, node);
+    node = new_binary(ND_COMMA, node, assign());
+  } //while
+  return node;
 } //expr()
 
 

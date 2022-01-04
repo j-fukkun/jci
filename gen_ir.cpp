@@ -160,6 +160,10 @@ Reg* gen_expr_IR(Node* node){
     return gen_binop_IR(IR_SHL, node);
   case ND_SHR:
     return gen_binop_IR(IR_SHR, node);
+  case ND_COMMA:{
+    gen_expr_IR(node->lhs);
+    return gen_expr_IR(node->rhs);
+  } //ND_COMMA
   case ND_LOGOR: {
     BasicBlock* bb = new_bb();
     BasicBlock* set0 = new_bb();

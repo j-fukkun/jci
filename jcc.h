@@ -121,6 +121,7 @@ enum NodeKind{
   ND_BITXOR, //bit xor ^
   ND_BITNOT, //bit not ~
   ND_CAST, //cast
+  ND_COMMA, //expr, expr 
   ND_NULL,
 };
 
@@ -296,7 +297,7 @@ Node* new_node(const NodeKind kind);
 Node* new_binary(const NodeKind kind, Node* lhs, Node* rhs);
 Node* new_num(const int val);
 
-Type* struct_decl();
+Type* struct_decl(const bool);
 
 Program* program();
 Function* function();

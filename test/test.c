@@ -230,11 +230,15 @@ int main(){
   assert(0, b, "for(i = 0; i < 10; i++){a++; continue; b++;} b;");
 
   i = 0; a = 0;
-  for(int i_for = 0; i_for < 10; i_for++){
+  for(int i = 0; i < 10; i++){
     a++;
   }
   assert(10, a, "a = 0; for(int i = 0; i < 10; i++){a++;} a;");
   assert(0, i, "i = 0; for(int i = 0; i < 10; i++){a++;} i;");
+  
+  for(i = 0, a = 0; i < 10; i++, a++){;}
+  assert(10, a, "for(i = 0, a = 0; i < 10; i++, a++){;} a;");
+  assert(10, i, "for(i = 0, a = 0; i < 10; i++, a++){;} i;");
   
   i = 0; a = 0;
   while(i < 10){
@@ -705,7 +709,12 @@ int main(){
   assert(3, tree_g->left->left->val, "tree_g->left->left->val");
   assert(4, tree_g->left->right->val, "tree_g->left->right->val");
 
-  //{int x = 0; int x = 1; printf("x = %d\n", x);} //redeclaration
+  //{int x = 0; int x = 1; } //error: redeclaration of variable
+  //redeclaration of struct tag, this is error but is not implemented yet
+  {struct T{int a;}; struct T{char a;};}
+  //{enum E{zero}; enum E{one};} //error: redeclaration of enum tag,
+  //{struct T{int a;}; enum T{zero};} //error: redeclaration of tag,
+  //{enum T{zero}; struct T{int a;};} //error: redeclaration of tag,
   
   printf("OK.\n");
   return 0;

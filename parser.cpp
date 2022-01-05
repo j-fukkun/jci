@@ -1614,7 +1614,8 @@ Node* new_assign_eq(NodeKind k, Node* lhs, Node* rhs){
 
 
 //assign = conditional (assign-op assign)?
-//assign-op = "=" | "+=" | "-=" | "*=" | "/=" 
+//assign-op = "=" | "+=" | "-=" | "*=" | "/="
+//          | "<<=" | ">>=" | "&=" | "|=" | "^="
 Node* assign(){
   //Node* node = logor();
   Node* node = conditional();
@@ -1646,6 +1647,26 @@ Node* assign(){
 
   if(consume("/=")){
     return new_assign_eq(ND_DIV, node, assign());
+  }
+
+  if(consume("<<=")){
+    return new_assign_eq(ND_SHL, node, assign());
+  }
+
+  if(consume(">>=")){
+    return new_assign_eq(ND_SHR, node, assign());
+  }
+
+  if(consume("&=")){
+    return new_assign_eq(ND_BITAND, node, assign());
+  }
+
+  if(consume("|=")){
+    return new_assign_eq(ND_BITOR, node, assign());
+  }
+
+  if(consume("^=")){
+    return new_assign_eq(ND_BITXOR, node, assign());
   }
   
   return node;

@@ -330,6 +330,16 @@ Token* tokenize(){
 
     //複数文字を区切る
     //multi-letter
+    //3-letter
+    if(startswith(p, "<<=")
+       || startswith(p, ">>=")
+       ){
+      cur = new_token(TK_RESERVED, cur, p, 3);
+      p += 3;
+      continue;
+    } //if multi-letter 3-letter
+    
+    //multi-letter 2-letter
     if(startswith(p, "==")
        || startswith(p, "!=")
        || startswith(p, "<=")
@@ -345,11 +355,15 @@ Token* tokenize(){
        || startswith(p, "*=")
        || startswith(p, "/=")
        || startswith(p, "->")
+       || startswith(p, "&=")
+       || startswith(p, "|=")
+       || startswith(p, "^=")
        ){
       cur = new_token(TK_RESERVED, cur, p, 2);
       p += 2;
       continue;
-    } //if multi-letter
+    } //if multi-letter 2-letter
+
 
     //１つの文字を区切る
     //single-letter

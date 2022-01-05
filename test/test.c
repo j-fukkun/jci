@@ -184,6 +184,15 @@ int main(){
   assert(1, 1?1:2, "1?1:2");
 
   assert(3, (1,2,3), "(1,2,3)");
+
+  {int x=1; x<<=3; assert(8, x, "int x=1; x<<=3; x;");}
+  {int x=5; x<<=1; assert(10, x, "int x=5; x<<=1; x;");}
+  {int x=5; x>>=1; assert(2, x, "int x=5; x>>=1; x;");}
+  {int x=-1; x>>=1; assert(-1, x, "int x=-1; x>>=1; x;");}
+  
+  {int x=6; x&=3; assert(2, x, "int x=6; x&=3; x;");}
+  {int x=6; x|=3; assert(7, x, "int x=6; x|=3; x;");}
+  {int x=15; x^=5; assert(10, x, "int x=15; x^=5; x;");}
   
   int a;
   a = ret3();

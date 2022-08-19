@@ -453,7 +453,7 @@ Type* basetype(StorageClass* sclass,
     INT = 1 << 8,
     LONG = 1 << 10,
     OTHER = 1 << 12,
-    //SIGNED = 1 << 13,
+    SIGNED = 1 << 13,
   };
     
   Type* type = int_type;
@@ -489,6 +489,7 @@ Type* basetype(StorageClass* sclass,
     if(!peek("int") && !peek("char") && !peek("void")
        && !peek("short") && !peek("long")
        && !peek("_Bool") && !peek("bool")
+       && !peek("signed")
        ){
       if(counter){
 	break;
@@ -532,6 +533,8 @@ Type* basetype(StorageClass* sclass,
     } else if(consume("bool")){
       //type = bool_type;
       counter += BOOL;
+    } else if(consume("signed")){
+      counter |= SIGNED;
     } //if
 
     switch(counter){
@@ -542,19 +545,28 @@ Type* basetype(StorageClass* sclass,
       type = bool_type;
       break;
     case CHAR:
+    case SIGNED + CHAR:
       type = char_type;
       break;
     case SHORT:
     case SHORT + INT:
+    case SIGNED + SHORT:
+    case SIGNED + SHORT + INT:
       type = short_type;
       break;
     case INT:
+    case SIGNED:
+    case SIGNED + INT:
       type = int_type;
       break;
     case LONG:
     case LONG + INT:
     case LONG + LONG:
     case LONG + LONG + INT:
+    case SIGNED + LONG:
+    case SIGNED + LONG + INT:
+    case SIGNED + LONG + LONG:
+    case SIGNED + LONG + LONG + INT:
       type = long_type;
       break;
     default:
@@ -929,6 +941,7 @@ bool is_typename(){
     || peek("long")
     || peek("struct") || peek("enum")
     || peek("typedef") || peek("static") || peek("extern")
+    || peek("signed")
     || find_typedef_inScope(token)
     ;
 

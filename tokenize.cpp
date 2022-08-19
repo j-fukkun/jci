@@ -175,7 +175,8 @@ const char* startswith_reserved(char* p){
 		      "int","char","short","long","void",
 		      "break","continue","switch","case","goto",
 		      "default","do","sizeof","struct", "enum",
-		      "_Bool", "bool", "typedef", "static", "extern"
+		      "_Bool", "bool", "typedef", "static", "extern",
+		      "signed"
   };
   int i = 0;
   for(i = 0; i < sizeof(kw) / sizeof(*kw); i++){

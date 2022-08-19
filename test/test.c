@@ -698,13 +698,30 @@ int main(){
   }
 
   assert(1, sizeof(char), "sizeof(char)");
+  assert(1, sizeof(signed char), "sizeof(signed char)");
+  assert(1, sizeof(signed char signed), "sizeof(signed char signed)");
+  
   assert(2, sizeof(short), "sizeof(short)");
   assert(2, sizeof(short int), "sizeof(short int)");
   assert(2, sizeof(int short), "sizeof(int short)");
+  assert(2, sizeof(signed short), "sizeof(signed short)");
+  assert(2, sizeof(int short signed), "sizeof(int short signed)");
+  
   assert(4, sizeof(int), "sizeof(int)");
+  assert(4, sizeof(signed int), "sizeof(signed int)");
+  assert(4, sizeof(signed), "sizeof(signed)");
+  assert(4, sizeof(signed signed), "sizeof(signed signed)");
+  
   assert(8, sizeof(long), "sizeof(long)");
   assert(8, sizeof(long int), "sizeof(long int)");
   assert(8, sizeof(int long), "sizeof(int long)");
+  assert(8, sizeof(signed long), "sizeof(signed long)");
+  assert(8, sizeof(signed long int), "sizeof(signed long int)");
+
+  assert(8, sizeof(long long), "sizeof(long long)");
+  assert(8, sizeof(signed long long), "sizeof(signed long long)");
+  assert(8, sizeof(signed long long int), "sizeof(signed long long int)");
+  
   assert(8, sizeof(char*), "sizeof(char*)");
   assert(8, sizeof(short*), "sizeof(short*)");
   assert(8, sizeof(int*), "sizeof(int*)");

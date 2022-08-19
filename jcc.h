@@ -221,6 +221,7 @@ class Function{
   std::list<Var*> params;
   std::list<BasicBlock*> bbs;
   bool is_static;
+  bool has_varargs;
   
   Node* node; //function body
   Var* locals; //local variables in function

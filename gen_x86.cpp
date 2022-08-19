@@ -351,6 +351,21 @@ void emit_text(Program* prog){
     printf("  push r13\n");
     printf("  push r14\n");
     printf("  push r15\n");
+
+    if(fn->has_varargs){
+      const int n = fn->params.size();
+
+      printf("mov dword ptr [rbp-8], %d\n", n * 8);
+      printf("mov [rbp-16], r9\n");
+      printf("mov [rbp-24], r8\n");
+      printf("mov [rbp-32], rcx\n");
+      printf("mov [rbp-40], rdx\n");
+      printf("mov [rbp-48], rsi\n");
+      printf("mov [rbp-56], rdi\n");
+      
+      //must implement for float
+      
+    } //if varargs
     
     //generate code from IR
     for(auto iter = fn->bbs.begin(), end = fn->bbs.end(); iter != end; ++iter){

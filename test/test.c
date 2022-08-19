@@ -160,6 +160,9 @@ int counter(){
   return i++ + j++;
 }
 
+int add_all1(int x, ...);
+int add_all3(int z, int b, int c, ...);
+
 int main(){
   
   assert(0, 0, "0");
@@ -767,6 +770,12 @@ int main(){
 
   assert(3, ext3, "ext3");  
   assert(3, static_fn(), "static_fn()");
+
+  assert(6, add_all1(1,2,3,0), "add_all1(1,2,3,0)");
+  assert(5, add_all1(1,2,3,-1,0), "add_all1(1,2,3,-1,0)");
+
+  assert(6, add_all3(1,2,3,0), "add_all3(1,2,3,0)");
+  assert(5, add_all3(1,2,3,-1,0), "add_all3(1,2,3,-1,0)");
   
   printf("OK.\n");
   return 0;

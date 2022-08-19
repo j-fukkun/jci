@@ -878,6 +878,13 @@ void read_func_params(Function* fn){
   while(!consume(")")){
     expect(",");
 
+    if(consume("...")){
+      fn->has_varargs = true;
+      expect(")");
+      fn->params = params;
+      return;
+    } //if ...
+    
     //curr->next = read_func_param();
     //curr = curr->next;
     params.push_back(read_func_param());

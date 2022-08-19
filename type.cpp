@@ -49,6 +49,12 @@ Type* struct_type(){
   return t;
 } //struct_type()
 
+Type* func_type(Type* return_type){
+  Type* t = new_type(TY_FUNC, 1, 1);
+  t->return_type = return_type;
+  return t;
+}
+
 Type* enum_type(){
   return new_type(TY_ENUM, 4, 4);
 } //enum_type()

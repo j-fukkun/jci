@@ -281,9 +281,16 @@ void gen(const IR* ir){
 
 void emit_data(Program* prog){
 
+  Var* gvar = prog->globals;
+  for(gvar; gvar; gvar = gvar->next){
+    if(!gvar->is_static){
+      printf(".global %s\n", gvar->name);
+    } //if
+  } //for
+  
   printf(".bss\n");
 
-  Var* gvar = prog->globals;
+  gvar = prog->globals;
   for(gvar; gvar; gvar = gvar->next){
     if(gvar->is_literal || gvar->initializer){
       continue;
@@ -330,7 +337,9 @@ void emit_text(Program* prog){
 
   Function* fn = prog->fns;
   for(fn; fn; fn = fn->next){
-    printf(".global %s\n", fn->name);
+    if(!fn->is_static){
+      printf(".global %s\n", fn->name);
+    } //if
     printf("%s:\n", fn->name);
     funcname = fn->name;
 

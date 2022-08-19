@@ -141,6 +141,7 @@ struct Var{
   char* literal; //string literal
 
   Initializer* initializer;
+  bool is_static;
 };
 
 struct Member;
@@ -219,7 +220,8 @@ class Function{
   //Var* params;
   std::list<Var*> params;
   std::list<BasicBlock*> bbs;
-
+  bool is_static;
+  
   Node* node; //function body
   Var* locals; //local variables in function
   int stack_size;
@@ -249,6 +251,7 @@ enum TypeKind{
   TY_ARRAY,
   TY_STRUCT,
   TY_ENUM,
+  TY_FUNC,
 };
 
 class Type{
@@ -260,6 +263,7 @@ class Type{
   int array_size; //size of array
   bool is_incomplete; //index is omitted?
   Member* members; //struct
+  Type* return_type; //function
 
   Type(){}
   //Type(TypeKind k){kind = k;}
@@ -283,6 +287,7 @@ Type* pointer_to(Type* base);
 Type* array_of(Type* base, int size);
 const int align_to(const int n, const int align);
 Type* struct_type();
+Type* func_type(Type* return_type);
 Type* enum_type();
 void add_type(Node* node);
 

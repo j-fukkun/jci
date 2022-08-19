@@ -196,7 +196,14 @@ Type* find_typedef_inScope(Token* tok){
   } //if
   return nullptr;
 } //find_typedef_inScope()
-
+/*
+char* new_label(){
+  static int count = 0;
+  char buf[20];
+  sprintf(buf, ".L.data.%d", count++);
+  return strndup(buf, 20);
+}
+*/
 Node* new_node(const NodeKind kind){
   Node* node = (Node*)calloc(1, sizeof(Node));
   node->kind = kind;
@@ -245,15 +252,18 @@ Var* new_lvar(const char* name, Type* type){
 } //new_lvar
 
 //グローバル変数のnew
-Var* new_gvar(char* name, Type* type, const bool is_literal, char* literal){
+Var* new_gvar(char* name, Type* type, const bool is_literal, char* literal, bool is_static, bool emit){
   Var* gvar = new_var(name, type, false);
+  gvar->is_static = is_static;
   VarScope* vs = push_scope(name);
   vs->var = gvar;
-  
-  gvar->next = globals;
-  gvar->is_literal = is_literal;
-  gvar->literal = literal;
-  globals = gvar;
+
+  if(emit){
+    gvar->next = globals;
+    gvar->is_literal = is_literal;
+    gvar->literal = literal;
+    globals = gvar;
+  }
   return gvar;
 } //new_gvar()
 
@@ -457,13 +467,20 @@ Type* basetype(StorageClass* sclass,
     Token* tok = token;
 
     //storage class specifier
-    if(peek("typedef")){
+    if(peek("typedef") || peek("static") || peek("extern")){
       if(!sclass){
 	error_tok(tok, "storage class specifier is not allowed here");
       } //if
 
       if(consume("typedef")){
 	*sclass = (StorageClass)(*sclass | TYPEDEF);
+      } else if(consume("static")){
+	*sclass = (StorageClass)(*sclass | STATIC);
+      } else if(consume("extern")){
+	*sclass = (StorageClass)(*sclass | EXTERN);
+      }
+      if(*sclass & (*sclass - 1)){
+	error_tok(tok, "typedef, static, and extern are not used together.");
       }
       continue;
     } //if(peek("typedef"))
@@ -757,8 +774,13 @@ void global_var(){
     error_tok(tok, "variable declared void");
   }
  
-  Var* gvar = new_gvar(name, type, false, NULL);
+  Var* gvar = new_gvar(name, type, false, NULL, sclass == STATIC, sclass != EXTERN);
 
+  if(sclass == EXTERN){
+    expect(";");
+    return;
+  }
+  
   if(consume("=")){
     gvar->initializer = gvar_initializer(type);
     expect(";");
@@ -865,11 +887,13 @@ Function* function(){
   char* name = nullptr;
   type = declarator(type, &name);
 
-  //new_gvar(name, type, );
+  //add function to the current scope
+  new_gvar(name, func_type(type), false, nullptr, false, false);
   
   Function* fn = new Function();
   //fn->name = strndup(tok->str, tok->len);
   fn->name = name;
+  fn->is_static = (sclass == STATIC);
   expect("(");
 
   Scope* sc = enter_scope();
@@ -904,7 +928,7 @@ bool is_typename(){
     || peek("short")
     || peek("long")
     || peek("struct") || peek("enum")
-    || peek("typedef")
+    || peek("typedef") || peek("static") || peek("extern")
     || find_typedef_inScope(token)
     ;
 
@@ -1058,7 +1082,7 @@ Node* lvar_initializer(Var* lvar){
   return node;
 } //lvar_initializer()
 
-
+static char* new_label();
 //declaration = basetype declarator type_suffix ("=" lvar_initializer)? ";"
 //            | basetype ";"
 Node* declaration(){
@@ -1085,6 +1109,20 @@ Node* declaration(){
   if(type->kind == TY_VOID){
     error_tok(tok, "variable declared void");
   }
+
+  if(sclass == STATIC){
+    //static local variable
+    Var* var = new_gvar(new_label(), type, false, nullptr, true, true);
+    push_scope(name)->var = var;
+
+    if(consume("=")){
+      var->initializer = gvar_initializer(type);
+    } else if(type->is_incomplete){
+      error_tok(tok, "incomplete type(static local variable)");
+    }
+    consume(";");
+    return new_node(ND_NULL);
+  } //if STATIC
 
   Var* lvar = new_lvar(name, type);
   
@@ -2037,7 +2075,7 @@ Node* compound_literal(){
   } //if(!peek("{"))
 
   if(scope_depth == 0){
-    Var* var = new_gvar(new_label(), type, false, nullptr);
+    Var* var = new_gvar(new_label(), type, false, nullptr, true, true);
     var->initializer = gvar_initializer(type);
     return new_var_node(var);
   } //if(scope_depth == 0)
@@ -2148,7 +2186,19 @@ Node* primary() {
       add_type(node);
 
       //scope check
-      
+      VarScope* sc = find_var_inScope(tok);
+      if(sc){
+	if(!sc->var || sc->var->type->kind != TY_FUNC){
+	  error_tok(tok, "not a function");
+	}
+	node->type = sc->var->type->return_type;
+      } //if(sc)
+      else if(!strcmp(node->funcname, "__builtin_va_start")){
+	node->type = void_type;
+      } else {
+	warn_tok(tok, "implicit declaration of a function");
+	node->type = int_type;
+      }
       return node;
     } //if(consume("("))
 
@@ -2182,7 +2232,7 @@ Node* primary() {
   tok = consume_str();
   if(tok){
     Type* type = array_of(char_type, tok->str_len);
-    Var* gvar = new_gvar(new_label(), type, true, tok->strings);
+    Var* gvar = new_gvar(new_label(), type, true, tok->strings, true, true);
     return new_var_node(gvar);
   } //if(tok) consume_str()
 

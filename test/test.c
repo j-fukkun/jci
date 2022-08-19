@@ -148,6 +148,18 @@ char* gvar23[] = {gvar17+0, gvar17+3, gvar17-3};
 int* gvar24 = &gvar3; //10
 int* gvar25 = gvar4 + 1; //2
 
+extern int ext1;
+extern int* ext2;
+static int ext3 = 3;
+
+static int static_fn(){ return 3; }
+
+int counter(){
+  static int i;
+  static int j = 1+1;
+  return i++ + j++;
+}
+
 int main(){
   
   assert(0, 0, "0");
@@ -729,6 +741,15 @@ int main(){
   //{enum E{zero}; enum E{one};} //error: redeclaration of enum tag,
   //{struct T{int a;}; enum T{zero};} //error: redeclaration of tag,
   //{enum T{zero}; struct T{int a;};} //error: redeclaration of tag,
+
+  ext1 = 5;
+  assert(5, ext1, "ext1");
+
+  ext2 = &ext1;
+  assert(5, *ext2, "*ext2");
+
+  assert(3, ext3, "ext3");  
+  assert(3, static_fn(), "static_fn()");
   
   printf("OK.\n");
   return 0;

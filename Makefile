@@ -11,8 +11,9 @@ jcc: $(OBJS)
 
 test: jcc 
 	gcc -no-pie -c test/inc.c -o test/inc.o
+	gcc -xc -c test/test_extern.c -o test/test_extern.o
 	./jcc test/test.c > test/test.s
-	gcc -no-pie -o test/test test/inc.o test/test.s
+	gcc -no-pie -o test/test test/inc.o test/test_extern.o test/test.s
 	test/test
 
 clean:

@@ -6,3 +6,4 @@ jcc
 #*
 *.s
 test/test
+*.lir

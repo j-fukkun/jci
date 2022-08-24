@@ -13,6 +13,7 @@
 #include <string>
 #include <cassert>
 #include <climits>
+#include <iostream>
 
 //
 //Tokenizer

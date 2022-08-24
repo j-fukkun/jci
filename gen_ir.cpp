@@ -555,11 +555,14 @@ void gen_IR(Program* prog){
 //
 void dump_IR(Program* prog){
 
+  FILE* file = fopen("test.lir", "w");
+  if(!file) std::cerr << "cannot open .lir file" << std::endl;
+  
   Function* fn= prog->fns;
   for(fn; fn; fn = fn->next){
-    printf("%s:\n", fn->name);
+    fprintf(file, "FUNCTION %s:\n", fn->name);
     for(auto iter = fn->bbs.begin(), end = fn->bbs.end(); iter != end; ++iter){
-      printf("BB_%d:\n", (*iter)->label);
+      fprintf(file, "BB_%d:\n", (*iter)->label);
       for(auto it_inst = (*iter)->instructions.begin(), end_inst = (*iter)->instructions.end(); it_inst != end_inst; ++it_inst){
 	IR* ir = *it_inst;
 	//const int d = ir->d->vn;
@@ -567,51 +570,118 @@ void dump_IR(Program* prog){
 	//const int b = ir->b->vn;
 	
 	switch(ir->opcode){
-	case IR_IMM:
-	  printf("v%d = %d\n", ir->d->vn, ir->imm);
-	  break;
-	case IR_MOV:
-	  printf("v%d = v%d\n", ir->d->vn, ir->b->vn);
-	  //printf("MOV\n");
-	  break;
 	case IR_ADD:
-	  printf("v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  //printf("ADD\n");
+	  fprintf(file, "  v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  break;
 	case IR_SUB:
-	  printf("v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  //printf("SUB\n");
+	  fprintf(file, "  v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  break;
 	case IR_MUL:
-	  printf("v%d = v%d * v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  //printf("MUL\n");
+	  fprintf(file, "  v%d = v%d * v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  break;
 	case IR_DIV:
-	  printf("v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  //printf("DIV\n");
+	  fprintf(file, "  v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_MOD:
+	  fprintf(file, "  v%d = v%d % v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_IMM:
+	  fprintf(file, "  v%d = %d\n", ir->d->vn, ir->imm);
+	  break;
+	case IR_MOV:
+	  fprintf(file, "  v%d = v%d\n", ir->d->vn, ir->b->vn);
+	  break;
+	case IR_EQ:
+	  fprintf(file, "  v%d = v%d == v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_NE:
+	  fprintf(file, "  v%d = v%d != v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_LT:
+	  fprintf(file, "  v%d = v%d < v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_LE:
+	  fprintf(file, "  v%d = v%d <= v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  break;
 	case IR_LVAR:
-	  printf("Load v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
+	  fprintf(file, "  Load_LVAR v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
 	  break;
 	case IR_STORE:
-	  printf("Store [v%d] v%d\n", ir->a->vn, ir->b->vn);
+	  fprintf(file, "  Store [v%d] v%d\n", ir->a->vn, ir->b->vn);
+	  break;
+	case IR_STORE_SPILL:
+	  fprintf(file, "  Store_Spill [rbp-%d] v%d\n", ir->lvar->offset, ir->a->vn);
 	  break;
 	case IR_LOAD:
-	  printf("Load v%d [v%d]\n", ir->d->vn, ir->b->vn);
+	  fprintf(file, "  Load v%d [v%d]\n", ir->d->vn, ir->b->vn);
+	  break;
+	case IR_LOAD_SPILL:
+	  fprintf(file, "  Load_Spill v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
 	  break;
 	case IR_RETURN:
 	  if(ir->a != nullptr){
-	    printf("RETURN v%d\n", ir->a->vn);
+	    fprintf(file, "  RETURN v%d\n", ir->a->vn);
 	  } else {
-	    printf("RETURN\n");
+	    fprintf(file, "  RETURN\n");
 	  }
+	  break;
+	case IR_BR:
+	  fprintf(file, "  br v%d, BB_%d, BB_%d\n", ir->b->vn, ir->bb1->label, ir->bb2->label);
+	  break;
+	case IR_JMP:
+	  fprintf(file, "  jmp BB_%d\n", ir->bb1->label);
+	  break;
+	case IR_JMP_LABEL:
+	  fprintf(file, "  jmp L.%s\n", ir->dst_label);
+	  break;
+	case IR_LABEL:
+	  fprintf(file, "L.%s\n", ir->label);
+	  break;
+	case IR_FUNCALL:
+	  fprintf(file, "  call %s(", ir->funcname);
+	  if(ir->num_args != 0) fprintf(file, "v%d", ir->args[0]->vn);
+	  for(int i = 1; i < ir->num_args; i++){
+	    fprintf(file, ", v%d", ir->args[i]->vn);
+	  }
+	  fprintf(file, ")\n");
+	  break;
+	case IR_PTR_ADD:
+	  fprintf(file, "  PTR_ADD: v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_PTR_SUB:
+	  fprintf(file, "  PTR_SUB: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_PTR_DIFF:
+	  fprintf(file, "  PTR_DIFF: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_LABEL_ADDR:
+	  fprintf(file, "  Load_GLOBAL v%d, %s\n", ir->d->vn, ir->name);
+	  break;
+	case IR_SHL:
+	  fprintf(file, "  v%d = v%d << v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_SHR:
+	  fprintf(file, "  v%d = v%d >> v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_BITOR:
+	  fprintf(file, "  v%d = v%d | v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_BITAND:
+	  fprintf(file, "  v%d = v%d & v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_BITXOR:
+	  fprintf(file, "  v%d = v%d ^ v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  break;
+	case IR_CAST:
+	  fprintf(file, "  CAST: v%d = v%d\n", ir->a->vn, ir->a->vn);
 	  break;
 	default:
 	  break;
 	} //switch
       } //for it_inst
     } //for iter
+    fprintf(file, "\n");
   } //for fn
-  
+  fclose(file);
 } //dump_IR()
 

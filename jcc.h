@@ -383,11 +383,15 @@ class Reg{
   int vn; //virtual register number
   int rn; //real register number
 
+  bool isImm;
+  int imm;
+
   //for register allocater
   int def;
   int last_use;
   bool spill;
   Var* lvar;
+
 };
 
 class IR;
@@ -439,7 +443,12 @@ IR* emit_IR(const IRKind op, Reg* d, Reg* a, Reg* b);
 Reg* gen_binop_IR(const IRKind op, Node* node);
 Reg* gen_expr_IR(Node* node);
 void gen_IR(Program* prog);
-void dump_IR(Program* prog);
+void dump_IR(Program* prog, const std::string filename);
+
+
+//optimizer
+void optimize(Program* prog);
+
 
 //
 //register allocator

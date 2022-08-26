@@ -23,6 +23,7 @@ Reg* new_reg(){
   Reg* reg = new Reg();
   reg->vn = nreg++;
   reg->rn = -1;
+  reg->isImm = false;
   return reg;
 } //new_reg()
 
@@ -263,26 +264,15 @@ Reg* gen_expr_IR(Node* node){
     add_type(n);
     return gen_expr_IR(n);
   } //ND_PRE_DEC
-    /*
-  case ND_POST_INC:{
-    //i++ --> t = i; i = i + 1; t;
-    Node* n = new_node(ND_ASSIGN);
-    
-    
-  } //ND_POST_INC
-  case ND_POST_DEC:{
-
-  } //ND_POST_DEC
-    */
   case ND_VAR: {
     //配列はアドレスを計算するだけで良い
     if(node->type->kind != TY_ARRAY){
-      Reg* r = new_reg();
+      Reg* r = new_reg(); //temporary
       load(node, r, gen_lval_IR(node));
       return r;
     }
     return gen_lval_IR(node);
-  } //ND_LVAR
+  } //ND_VAR
   case ND_MEMBER: {
     Reg* r = new_reg();
     load(node, r, gen_lval_IR(node));
@@ -553,9 +543,9 @@ void gen_IR(Program* prog){
 //
 //IR dump
 //
-void dump_IR(Program* prog){
+void dump_IR(Program* prog, const std::string filename){
 
-  FILE* file = fopen("test.lir", "w");
+  FILE* file = fopen(filename.c_str(), "w");
   if(!file) std::cerr << "cannot open .lir file" << std::endl;
   
   Function* fn= prog->fns;
@@ -571,19 +561,59 @@ void dump_IR(Program* prog){
 	
 	switch(ir->opcode){
 	case IR_ADD:
-	  fprintf(file, "  v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d + %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d + v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d + %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_SUB:
-	  fprintf(file, "  v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d - %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d - v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d - %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_MUL:
-	  fprintf(file, "  v%d = v%d * v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d * %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d * v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d * %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d * v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_DIV:
-	  fprintf(file, "  v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d / %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d / v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d / %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_MOD:
-	  fprintf(file, "  v%d = v%d % v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d % %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d % v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d % %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d % v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_IMM:
 	  fprintf(file, "  v%d = %d\n", ir->d->vn, ir->imm);
@@ -592,16 +622,48 @@ void dump_IR(Program* prog){
 	  fprintf(file, "  v%d = v%d\n", ir->d->vn, ir->b->vn);
 	  break;
 	case IR_EQ:
-	  fprintf(file, "  v%d = v%d == v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d == %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d == v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d == %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d == v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_NE:
-	  fprintf(file, "  v%d = v%d != v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d != %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d != v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d != %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d != v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_LT:
-	  fprintf(file, "  v%d = v%d < v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d < %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d < v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d < %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d < v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_LE:
-	  fprintf(file, "  v%d = v%d <= v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d <= %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d <= v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d <= %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d <= v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_LVAR:
 	  fprintf(file, "  Load_LVAR v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
@@ -646,10 +708,22 @@ void dump_IR(Program* prog){
 	  fprintf(file, ")\n");
 	  break;
 	case IR_PTR_ADD:
-	  fprintf(file, "  PTR_ADD: v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm){
+	    fprintf(file, "  PTR_ADD: v%d = %d + v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  PTR_ADD: v%d = v%d + %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  PTR_ADD: v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_PTR_SUB:
-	  fprintf(file, "  PTR_SUB: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm){
+	    fprintf(file, "  PTR_SUB: v%d = %d - v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  PTR_SUB: v%d = v%d - %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  PTR_SUB: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_PTR_DIFF:
 	  fprintf(file, "  PTR_DIFF: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
@@ -658,19 +732,59 @@ void dump_IR(Program* prog){
 	  fprintf(file, "  Load_GLOBAL v%d, %s\n", ir->d->vn, ir->name);
 	  break;
 	case IR_SHL:
-	  fprintf(file, "  v%d = v%d << v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d << %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d << v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d << %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d << v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_SHR:
-	  fprintf(file, "  v%d = v%d >> v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d >> %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d >> v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d >> %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d >> v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_BITOR:
-	  fprintf(file, "  v%d = v%d | v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d | %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d | v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d | %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d | v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_BITAND:
-	  fprintf(file, "  v%d = v%d & v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d & %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d & v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d & %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d & v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_BITXOR:
-	  fprintf(file, "  v%d = v%d ^ v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  if(ir->a->isImm && ir->b->isImm){
+	    fprintf(file, "  v%d = %d ^ %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
+	  } else if(ir->a->isImm){
+	    fprintf(file, "  v%d = %d ^ v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
+	  } else if(ir->b->isImm){
+	    fprintf(file, "  v%d = v%d ^ %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  v%d = v%d ^ v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_CAST:
 	  fprintf(file, "  CAST: v%d = v%d\n", ir->a->vn, ir->a->vn);

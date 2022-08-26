@@ -7,3 +7,4 @@ jcc
 *.s
 test/test
 *.lir
+*.txt

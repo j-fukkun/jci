@@ -41,7 +41,7 @@ int main(int argc, char **argv){
   Program* prog = program();
 
   gen_IR(prog);
-
+  
   Function* fn = prog->fns;
   for(fn; fn; fn = fn->next){
     int offset = 0;
@@ -54,13 +54,17 @@ int main(int argc, char **argv){
     } //for
     fn->stack_size = offset;
   } //for
-  
-  dump_IR(prog);
+
+  std::string filename_str = filename;
+  dump_IR(prog, std::string(filename_str + ".lir"));
+
+  optimize(prog);
+
+  dump_IR(prog, std::string(filename_str + "_optimized.lir"));
   
   allocateRegister(prog);
 
   //スタックサイズを計算
-  //すべての変数を、とりあえず、8バイトとする
   /*
   Function* fn = prog->fns;
   for(fn; fn; fn = fn->next){

@@ -19,7 +19,11 @@ void print_cmp(const std::string inst, const IR* ir){
   const int a = ir->a->rn;
   const int b = ir->b->rn;
 
-  printf("  cmp %s, %s\n", regs[a].c_str(), regs[b].c_str()); //compare フラグレジスタに結果が格納される
+  if(ir->b->isImm){
+    printf("  cmp %s, %d\n", regs[a].c_str(), ir->b->imm);
+  } else {
+    printf("  cmp %s, %s\n", regs[a].c_str(), regs[b].c_str()); //compare フラグレジスタに結果が格納される
+  }
   printf("  %s %s\n", inst.c_str(), regs8[d].c_str()); //フラグレジスタに格納された結果を8ビットレジスタに格納
   printf("  movzb %s, %s\n", regs[d].c_str(), regs8[d].c_str()); //64bitレジスタの上位56bitをゼロクリア
   
@@ -112,41 +116,77 @@ void gen(const IR* ir){
     printf("  mov %s, %d\n", regs[d].c_str(), ir->imm);
     break;
   case IR_MOV:
-    printf("  mov %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  mov %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  mov %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_ADD:
-    printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  add %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    } 
     break;
   case IR_SUB:
-    printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  sub %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_MUL:
-    printf("  mov rax, %s\n", regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  mov rax, %d\n", ir->b->imm);
+    } else {
+      printf("  mov rax, %s\n", regs[b].c_str());
+    }
     printf("  imul %s\n", regs[d].c_str());
     printf("  mov %s, rax\n", regs[d].c_str());
     break;
   case IR_DIV:
     printf("  mov rax, %s\n", regs[d].c_str());
     printf("  cqo\n");
-    printf("  idiv %s\n", regs[b].c_str());
+    /*
+    if(ir->b->isImm){
+      printf("  idiv %d\n", ir->b->imm);
+    } else {
+    */
+      printf("  idiv %s\n", regs[b].c_str());
+      //}
     printf("  mov %s, rax\n", regs[d].c_str());
     break;
   case IR_MOD:
     printf("  mov rax, %s\n", regs[d].c_str());
     printf("  cqo\n");
-    printf("  idiv %s\n", regs[b].c_str());
+    /*
+    if(ir->b->isImm){
+      printf("  idiv %d\n", ir->b->imm);
+    } else {
+    */
+      printf("  idiv %s\n", regs[b].c_str());
+      //}
     printf("  mov %s, rdx\n", regs[d].c_str());
     break;
   case IR_CAST:
     truncate(ir);
     break;
   case IR_PTR_ADD:
-    printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
-    printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  add %s, %d\n", regs[d].c_str(), ir->b->imm * ir->type_base_size);
+    } else {
+      printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
+      printf("  add %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_PTR_SUB:
-    printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
-    printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  sub %s, %d\n", regs[d].c_str(), ir->b->imm * ir->type_base_size);
+    } else {
+      printf("  imul %s, %d\n", regs[b].c_str(), ir->type_base_size);
+      printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_PTR_DIFF:
     printf("  sub %s, %s\n", regs[d].c_str(), regs[b].c_str());
@@ -168,28 +208,52 @@ void gen(const IR* ir){
     print_cmp(std::string("setle"), ir);
     break;
   case IR_SHL:
-    printf("  mov cl, %s\n", regs8[b].c_str());
+    if(ir->b->isImm){
+      printf("  mov cl, %d\n", ir->b->imm);
+    } else {
+      printf("  mov cl, %s\n", regs8[b].c_str());
+    }
     printf("  shl %s, cl\n", regs[d].c_str());
     break;
   case IR_SHR:
-    printf("  mov cl, %s\n", regs8[b].c_str());
+    if(ir->b->isImm){
+      printf("  mov cl, %d\n", ir->b->imm);
+    } else {
+      printf("  mov cl, %s\n", regs8[b].c_str());
+    }
     printf("  shr %s, cl\n", regs[d].c_str());
     break;
   case IR_BITOR:
-    printf("  or %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  or %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  or %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_BITAND:
-    printf("  and %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  and %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  and %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_BITXOR:
-    printf("  xor %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  xor %s, %d\n", regs[d].c_str(), ir->b->imm);
+    } else {
+      printf("  xor %s, %s\n", regs[d].c_str(), regs[b].c_str());
+    }
     break;
   case IR_LVAR:
     printf("  lea %s, [rbp-%d]\n", regs[d].c_str(), ir->lvar->offset);
     break;
   case IR_RETURN:
     if(ir->a != nullptr){
-      printf("  mov rax, %s\n", regs[a].c_str());
+      if(ir->a->isImm){
+	printf("  mov rax, %d\n", ir->a->imm);
+      } else {
+	printf("  mov rax, %s\n", regs[a].c_str());
+      }
     }
     printf("  jmp .L.return.%s\n", funcname);
     break;
@@ -208,9 +272,12 @@ void gen(const IR* ir){
       printf("  cmp %s, 0\n", regs[b].c_str());
       printf("  setne %s\n", regs8[b].c_str());
       printf("  movzb %s, %s\n", regs[b].c_str(), regs8[b].c_str());
-    } //if
-    printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
-    //printf("  mov [%s], %s\n", regs[d].c_str(), reg(a, ir->type_size).c_str());
+      printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
+    } else if(ir->b->isImm){
+      printf("  mov [%s], %d\n", regs[a].c_str(), ir->b->isImm);
+    } else {
+      printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
+    }
     break;
   case IR_STORE_SPILL:
     printf("  mov [rbp-%d], %s\n", ir->lvar->offset, regs[a].c_str());
@@ -222,7 +289,11 @@ void gen(const IR* ir){
     printf("  lea %s, %s\n", regs[d].c_str(), ir->name);
     break;
   case IR_BR:
-    printf("  cmp %s, 0\n", regs[b].c_str());
+    if(ir->b->isImm){
+      printf("  cmp %d, 0\n", ir->b->imm);
+    } else {
+      printf("  cmp %s, 0\n", regs[b].c_str());
+    }
     printf("  jne .L%d\n", ir->bb1->label);
     printf("  jmp .L%d\n", ir->bb2->label);
     break;
@@ -265,7 +336,11 @@ void gen(const IR* ir){
     */
     
     for (int i = 0; i < ir->num_args; i++){
-      printf("  mov %s, %s\n", argregs[i].c_str(), regs[ir->args[i]->rn].c_str());
+      if(ir->args[i]->isImm){
+	printf("  mov %s, %d\n", argregs[i].c_str(), ir->args[i]->imm);
+      } else {
+	printf("  mov %s, %s\n", argregs[i].c_str(), regs[ir->args[i]->rn].c_str());
+      }
     } //for
     
     printf("  push r10\n");

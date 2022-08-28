@@ -12,6 +12,6 @@ int assert(int expected, int actual, char* code) {
 
 int main(){
 
-  //{int x=5; x<<=1; assert(10, x, "int x=5; x<<=1; x;");}
-  assert(513, (short)8590066177, "(short)8590066177");
+  {int x=5+10; assert(15, x, "int x=5+10; x;");}
+  
 }

@@ -1,0 +1,43 @@
+FUNCTION assert:
+BB_1:
+  Load_LVAR v3 [rbp-16]
+  Load v2 [v3]
+  Load_LVAR v5 [rbp-12]
+  Load v4 [v5]
+  v1 = v2 == v4
+  br v1, BB_2, BB_3
+BB_2:
+  Load_GLOBAL v6, .L.data.0
+  Load_LVAR v8 [rbp-8]
+  Load v7 [v8]
+  Load_LVAR v10 [rbp-12]
+  Load v9 [v10]
+  call printf(v6, v7, v9)
+  jmp BB_4
+BB_3:
+  Load_GLOBAL v12, .L.data.1
+  Load_LVAR v14 [rbp-8]
+  Load v13 [v14]
+  Load_LVAR v16 [rbp-16]
+  Load v15 [v16]
+  Load_LVAR v18 [rbp-12]
+  Load v17 [v18]
+  call printf(v12, v13, v15, v17)
+  IMM: v20 = 1
+  call exit(1)
+  jmp BB_4
+BB_4:
+
+FUNCTION main:
+BB_5:
+  Load_LVAR v22 [rbp-4]
+  IMM: v24 = 5
+  IMM: v25 = 10
+  v23 = 5 + 10
+  Store [v22] v23
+  IMM: v26 = 15
+  Load_LVAR v28 [rbp-4]
+  Load v27 [v28]
+  Load_GLOBAL v29, .L.data.2
+  call assert(15, v27, v29)
+

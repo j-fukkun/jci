@@ -4,8 +4,9 @@ bool optimize_bb(BasicBlock* bb){
   //changed IR --> return true
   //otherwise --> return false
   bool changed = false;
-  
+  changed = changed || peephole(bb);
   changed = changed || constantPropagation_bb(bb);
+  changed = changed || peephole(bb);
   
   return changed;
 } //optimize_bb()
@@ -27,7 +28,7 @@ bool isBinaryOp(const IRKind opcode){
     || opcode == IR_BITOR
     || opcode == IR_BITAND
     || opcode == IR_BITXOR;
-} //isBInaryOp()
+} //isBinaryOp()
 
 bool isUnaryOp(const IRKind opcode){
   return opcode == IR_MOV
@@ -105,3 +106,33 @@ bool constantPropagation_bb(BasicBlock* bb){
   } //for iter_inst
   return changed;
 } //constantPropagation_bb()
+
+bool peephole(BasicBlock* bb){
+
+  bool changed = false;
+  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
+    IR* ir = *iter_inst;
+    if(isBinaryOp(ir->opcode)
+       && ir->a->isImm && ir->b->isImm){
+      //switch(ir->opcode){
+      /*IR_ADD:*/if(ir->opcode == IR_ADD){	  
+	  const int c = ir->a->imm + ir->b->imm;
+	  IR* new_ir = new IR();
+	  new_ir->opcode = IR_MOV;
+	  new_ir->d = ir->d;
+	  new_ir->b = ir->b;
+	  new_ir->b->isImm = true;
+	  new_ir->b->imm = c;
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	  break;
+	}
+      //default:
+      //break;
+      //} //switch
+    } //if
+  } //for iter_inst
+  return changed;
+} //peephole()

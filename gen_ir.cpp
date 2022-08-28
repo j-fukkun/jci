@@ -619,7 +619,11 @@ void dump_IR(Program* prog, const std::string filename){
 	  fprintf(file, "  IMM: v%d = %d\n", ir->d->vn, ir->imm);
 	  break;
 	case IR_MOV:
-	  fprintf(file, "  MOV: v%d = v%d\n", ir->d->vn, ir->b->vn);
+	  if(ir->b->isImm){
+	    fprintf(file, "  MOV: v%d = %d\n", ir->d->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  MOV: v%d = v%d\n", ir->d->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_EQ:
 	  if(ir->a->isImm && ir->b->isImm){

@@ -616,10 +616,10 @@ void dump_IR(Program* prog, const std::string filename){
 	  }
 	  break;
 	case IR_IMM:
-	  fprintf(file, "  v%d = %d\n", ir->d->vn, ir->imm);
+	  fprintf(file, "  IMM: v%d = %d\n", ir->d->vn, ir->imm);
 	  break;
 	case IR_MOV:
-	  fprintf(file, "  v%d = v%d\n", ir->d->vn, ir->b->vn);
+	  fprintf(file, "  MOV: v%d = v%d\n", ir->d->vn, ir->b->vn);
 	  break;
 	case IR_EQ:
 	  if(ir->a->isImm && ir->b->isImm){
@@ -701,9 +701,19 @@ void dump_IR(Program* prog, const std::string filename){
 	  break;
 	case IR_FUNCALL:
 	  fprintf(file, "  call %s(", ir->funcname);
-	  if(ir->num_args != 0) fprintf(file, "v%d", ir->args[0]->vn);
+	  if(ir->num_args != 0){
+	    if(ir->args[0]->isImm){
+	      fprintf(file, "%d", ir->args[0]->imm);
+	    } else {
+	      fprintf(file, "v%d", ir->args[0]->vn);
+	    }
+	  }
 	  for(int i = 1; i < ir->num_args; i++){
-	    fprintf(file, ", v%d", ir->args[i]->vn);
+	    if(ir->args[i]->isImm){
+	      fprintf(file, ", %d", ir->args[i]->imm);
+	    } else {
+	      fprintf(file, ", v%d", ir->args[i]->vn);
+	    }
 	  }
 	  fprintf(file, ")\n");
 	  break;

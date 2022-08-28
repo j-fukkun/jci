@@ -67,6 +67,23 @@ const std::string argreg(const int r, const int size){
   
 } //argreg()
 
+const std::string sizeQualifier(const int size){
+  if(size == 1){
+    return std::string("BYTE PTR");
+  }
+
+  if(size == 2){
+    return std::string("WORD PTR");
+  }
+
+  if(size == 4){
+    return std::string("DWORD PTR");
+  }
+  
+  assert(size == 8);
+  return std::string("QWORD PTR");
+}
+
 void load(const IR* ir){
   const int d = ir->d ? ir->d->rn : 0;
   const int b = ir->b ? ir->b->rn : 0;
@@ -269,12 +286,22 @@ void gen(const IR* ir){
     break;
   case IR_STORE:
     if(ir->type->kind == TY_BOOL){
-      printf("  cmp %s, 0\n", regs[b].c_str());
-      printf("  setne %s\n", regs8[b].c_str());
-      printf("  movzb %s, %s\n", regs[b].c_str(), regs8[b].c_str());
-      printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
-    } else if(ir->b->isImm){
-      printf("  mov [%s], %d\n", regs[a].c_str(), ir->b->isImm);
+      if(ir->b->isImm){
+	if(ir->b->imm == 0){
+	  printf("  mov BYTE PTR [%s], 0\n", regs[a].c_str());
+	} else {
+	  printf("  mov BYTE PTR [%s], 1\n", regs[a].c_str());
+	}
+      } else {
+	printf("  cmp %s, 0\n", regs[b].c_str());
+	printf("  setne %s\n", regs8[b].c_str());
+	printf("  movzb %s, %s\n", regs[b].c_str(), regs8[b].c_str());
+	printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
+      }
+    } //if TY_BOOL
+    else if(ir->b->isImm){
+      const std::string q = sizeQualifier(ir->type_size);
+      printf("  mov %s [%s], %d\n", q.c_str(), regs[a].c_str(), ir->b->imm);
     } else {
       printf("  mov [%s], %s\n", regs[a].c_str(), reg(b, ir->type_size).c_str());
     }
@@ -290,7 +317,12 @@ void gen(const IR* ir){
     break;
   case IR_BR:
     if(ir->b->isImm){
-      printf("  cmp %d, 0\n", ir->b->imm);
+      //printf("  cmp %d, 0\n", ir->b->imm);
+      if(ir->b->imm == 0){
+	printf("  jmp .L%d\n", ir->bb2->label);
+      } else {
+	printf("  jmp .L%d\n", ir->bb1->label);
+      }
     } else {
       printf("  cmp %s, 0\n", regs[b].c_str());
     }

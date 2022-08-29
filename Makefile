@@ -18,7 +18,7 @@ test: jcc
 
 test_opt: jcc
 	./jcc test/test_opt.c > test/test_opt.s
-	gcc -static -o test/test_opt.out test/test_opt.s
+	gcc -g -static -o test/test_opt.out test/test_opt.s
 	./test/test_opt.out
 
 clean:

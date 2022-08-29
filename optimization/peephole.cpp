@@ -107,31 +107,135 @@ bool constantPropagation_bb(BasicBlock* bb){
   return changed;
 } //constantPropagation_bb()
 
+static IR* createMove(Reg* d, Reg* b, const int imm){
+  IR* ir = new IR();
+  ir->opcode = IR_MOV;
+  ir->d = d;
+  ir->b = b;
+  ir->b->isImm = true;
+  ir->b->imm = imm;
+  return ir;
+} //createIRfrom()()
+
 bool peephole(BasicBlock* bb){
 
   bool changed = false;
   for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
     IR* ir = *iter_inst;
     if(isBinaryOp(ir->opcode)
-       && ir->a->isImm && ir->b->isImm){
-      //switch(ir->opcode){
-      /*IR_ADD:*/if(ir->opcode == IR_ADD){	  
+       && ir->a->isImm && ir->b->isImm){      
+	if(ir->opcode == IR_ADD){
 	  const int c = ir->a->imm + ir->b->imm;
-	  IR* new_ir = new IR();
-	  new_ir->opcode = IR_MOV;
-	  new_ir->d = ir->d;
-	  new_ir->b = ir->b;
-	  new_ir->b->isImm = true;
-	  new_ir->b->imm = c;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
 	  auto del_it = bb->instructions.erase(iter_inst);
 	  auto new_it = bb->instructions.insert(del_it, new_ir);
 	  iter_inst = new_it;
 	  changed = true;
-	  break;
-	}
-      //default:
-      //break;
-      //} //switch
+	} //ADD
+	else if(ir->opcode == IR_SUB){
+	  const int c = ir->a->imm - ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //SUB
+	else if(ir->opcode == IR_MUL){
+	  const int c = ir->a->imm * ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //MUL
+	else if(ir->opcode == IR_DIV){
+	  const int c = ir->a->imm / ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //DIV
+	else if(ir->opcode == IR_MOD){
+	  const int c = ir->a->imm % ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //MOD
+	else if(ir->opcode == IR_EQ){
+	  const int c = ir->a->imm == ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //EQ
+	else if(ir->opcode == IR_NE){
+	  const int c = ir->a->imm != ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //NE
+	else if(ir->opcode == IR_LT){
+	  const int c = ir->a->imm < ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //LT
+	else if(ir->opcode == IR_LE){
+	  const int c = ir->a->imm <= ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //LE
+	else if(ir->opcode == IR_SHL){
+	  const int c = ir->a->imm << ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //SHL
+	else if(ir->opcode == IR_SHR){
+	  const int c = ir->a->imm >> ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //SHR
+	else if(ir->opcode == IR_BITOR){
+	  const int c = ir->a->imm | ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //BITOR
+	else if(ir->opcode == IR_BITAND){
+	  const int c = ir->a->imm & ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //BITAND
+	else if(ir->opcode == IR_BITXOR){
+	  const int c = ir->a->imm ^ ir->b->imm;
+	  IR* new_ir = createMove(ir->d, ir->b, c);	  
+	  auto del_it = bb->instructions.erase(iter_inst);
+	  auto new_it = bb->instructions.insert(del_it, new_ir);
+	  iter_inst = new_it;
+	  changed = true;
+	} //BITXOR
     } //if
   } //for iter_inst
   return changed;

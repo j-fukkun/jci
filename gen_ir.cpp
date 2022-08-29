@@ -673,7 +673,11 @@ void dump_IR(Program* prog, const std::string filename){
 	  fprintf(file, "  Load_LVAR v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
 	  break;
 	case IR_STORE:
-	  fprintf(file, "  Store [v%d] v%d\n", ir->a->vn, ir->b->vn);
+	  if(ir->b->isImm){
+	    fprintf(file, "  Store [v%d] %d\n", ir->a->vn, ir->b->imm);
+	  } else {
+	    fprintf(file, "  Store [v%d] v%d\n", ir->a->vn, ir->b->vn);
+	  }
 	  break;
 	case IR_STORE_SPILL:
 	  fprintf(file, "  Store_Spill [rbp-%d] v%d\n", ir->lvar->offset, ir->a->vn);
@@ -692,7 +696,11 @@ void dump_IR(Program* prog, const std::string filename){
 	  }
 	  break;
 	case IR_BR:
-	  fprintf(file, "  br v%d, BB_%d, BB_%d\n", ir->b->vn, ir->bb1->label, ir->bb2->label);
+	  if(ir->b->isImm){
+	    fprintf(file, "  br %d, BB_%d, BB_%d\n", ir->b->imm, ir->bb1->label, ir->bb2->label);
+	  } else {
+	    fprintf(file, "  br v%d, BB_%d, BB_%d\n", ir->b->vn, ir->bb1->label, ir->bb2->label);
+	  }
 	  break;
 	case IR_JMP:
 	  fprintf(file, "  jmp BB_%d\n", ir->bb1->label);

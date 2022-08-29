@@ -16,6 +16,11 @@ test: jcc
 	gcc -static -o test/test.out test/test_extern.o test/test.s
 	./test/test.out
 
+test_opt: jcc
+	./jcc test/test_opt.c > test/test_opt.s
+	gcc -static -o test/test_opt.out test/test_opt.s
+	./test/test_opt.out
+
 clean:
 	rm -f jcc *.o *~ tmp* a.out *.s *.lir
 	rm -f test/*.s test/*~ test/*.o test/test test/*.lir test/*.out

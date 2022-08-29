@@ -771,6 +771,10 @@ int main(){
   assert(3, ext3, "ext3");  
   assert(3, static_fn(), "static_fn()");
 
+  assert(2, counter(), "counter()");
+  assert(4, counter(), "counter()");
+  assert(6, counter(), "counter()");
+
   assert(6, add_all1(1,2,3,0), "add_all1(1,2,3,0)");
   assert(5, add_all1(1,2,3,-1,0), "add_all1(1,2,3,-1,0)");
 

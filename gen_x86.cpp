@@ -136,7 +136,7 @@ void gen(const IR* ir){
     if(ir->b->isImm){
       printf("  mov %s, %d\n", regs[d].c_str(), ir->b->imm);
     } else {
-      printf("  mov %s, %s\n", regs[d].c_str(), regs[b].c_str());
+      printf("  mov %s, %s\n", regs[d].c_str(), regs[b].c_str());      
     }
     break;
   case IR_ADD:
@@ -331,7 +331,11 @@ void gen(const IR* ir){
     break;
   case IR_JMP:
     if (ir->bbarg){
-      printf("  mov %s, %s\n", regs[ir->bb1->param->rn].c_str(), regs[ir->bbarg->rn].c_str());
+      if(ir->bbarg->isImm){
+	printf("  mov %s, %d\n", regs[ir->bb1->param->rn].c_str(), ir->bbarg->imm);
+      } else {
+	printf("  mov %s, %s\n", regs[ir->bb1->param->rn].c_str(), regs[ir->bbarg->rn].c_str());
+      }
     } //if
     printf("  jmp .L%d\n", ir->bb1->label);
     break;
@@ -454,6 +458,7 @@ void emit_text(Program* prog){
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
     printf("  sub rsp, %d\n", fn->stack_size);
+    printf("  push rbx\n");
     printf("  push r12\n");
     printf("  push r13\n");
     printf("  push r14\n");
@@ -490,6 +495,7 @@ void emit_text(Program* prog){
     printf("  pop r14\n");
     printf("  pop r13\n");
     printf("  pop r12\n");
+    printf("  pop rbx\n");    
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
     printf("  ret\n");

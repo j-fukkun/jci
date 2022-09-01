@@ -32,6 +32,9 @@ Reg* new_imm(const int imm){
   IR* ir = new_ir(IR_IMM);
   ir->d = reg;
   ir->imm = imm;
+  
+  reg->isImm = true;
+  reg->imm = imm;
   return reg;
 } //new_imm()
 
@@ -141,6 +144,7 @@ Reg* gen_expr_IR(Node* node){
     IR* temp_ir = new_ir(IR_CAST);
     temp_ir->a = temp_a;
     temp_ir->type = node->type;
+    if(temp_ir->a->isImm) temp_ir->a->isImm = false;
     return temp_ir->a;
   }
   case ND_PTR_ADD:
@@ -594,26 +598,28 @@ void dump_IR(Program* prog, const std::string filename){
 	  }
 	  break;
 	case IR_DIV:
+	  /*
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d / %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
 	    fprintf(file, "  v%d = %d / v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
 	  } else if(ir->b->isImm){
 	    fprintf(file, "  v%d = v%d / %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
-	  } else {
+	    } else {*/
 	    fprintf(file, "  v%d = v%d / v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  }
+	  //}
 	  break;
 	case IR_MOD:
+	  /*
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d % %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
 	    fprintf(file, "  v%d = %d % v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
 	  } else if(ir->b->isImm){
 	    fprintf(file, "  v%d = v%d % %d\n", ir->d->vn, ir->a->vn, ir->b->imm);
-	  } else {
+	    } else {*/
 	    fprintf(file, "  v%d = v%d % v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
-	  }
+	    //}
 	  break;
 	case IR_IMM:
 	  fprintf(file, "  IMM: v%d = %d\n", ir->d->vn, ir->imm);
@@ -703,6 +709,13 @@ void dump_IR(Program* prog, const std::string filename){
 	  }
 	  break;
 	case IR_JMP:
+	  if(ir->bbarg){
+	    if(ir->bbarg->isImm){
+	      fprintf(file, "  BBARG: v%d = %d\n", ir->bb1->param->vn, ir->bbarg->imm);
+	    } else {
+	      fprintf(file, "  BBARG: v%d = v%d\n", ir->bb1->param->vn, ir->bbarg->vn);
+	    }
+	  }
 	  fprintf(file, "  jmp BB_%d\n", ir->bb1->label);
 	  break;
 	case IR_JMP_LABEL:

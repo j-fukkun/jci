@@ -63,7 +63,8 @@ bool constantPropagation_bb(BasicBlock* bb){
     }
 
     //replace
-    if(isBinaryOp(ir->opcode)){
+    if(isBinaryOp(ir->opcode)
+       && ir->opcode != IR_DIV && ir->opcode != IR_MOD){
       if(table.find(ir->a) != table.end() && !ir->a->isImm){
 	ir->a->isImm = true;
 	ir->a->imm = table.find(ir->a)->second;
@@ -83,7 +84,7 @@ bool constantPropagation_bb(BasicBlock* bb){
 	ir->b->imm = table.find(ir->b)->second;
 	changed = true;
       }
-    } //if unary
+    } //if unary-ops
     
     if(ir->opcode == IR_RETURN){
       if(table.find(ir->a) != table.end() && !ir->a->isImm){
@@ -91,7 +92,17 @@ bool constantPropagation_bb(BasicBlock* bb){
 	ir->a->imm = table.find(ir->a)->second;
 	changed = true;
       }
-    }
+    } //if RETURN
+
+    if(ir->opcode == IR_JMP){
+      if(ir->bbarg){
+	if(table.find(ir->bbarg) != table.end() && !ir->bbarg->isImm){
+	  ir->bbarg->isImm = true;
+	  ir->bbarg->imm = table.find(ir->bbarg)->second;
+	  changed = true;
+	}
+      }
+    } //if JMP
 
     //function call
     if(ir->opcode == IR_FUNCALL){
@@ -127,17 +138,27 @@ bool DCE_bb(BasicBlock* bb){
        && ir->opcode != IR_LABEL
        && ir->opcode != IR_FUNCALL
        && ir->opcode != IR_CAST
+       && ir->opcode != IR_LVAR
        ){
       table.insert(ir->d);
     } //if
 
     //binary
     if(isBinaryOp(ir->opcode)){
-      if(table.find(ir->a) != table.end() && !ir->a->isImm){
-	table.erase(ir->a);
-      }
-      if(table.find(ir->b) != table.end() && !ir->b->isImm){
-	table.erase(ir->b);
+      if(ir->opcode == IR_DIV || ir->opcode == IR_MOD){
+	if(table.find(ir->a) != table.end()){
+	  table.erase(ir->a);
+	}
+	if(table.find(ir->b) != table.end()){
+	  table.erase(ir->b);
+	}
+      } else {
+	if(table.find(ir->a) != table.end() && !ir->a->isImm){
+	  table.erase(ir->a);
+	}
+	if(table.find(ir->b) != table.end() && !ir->b->isImm){
+	  table.erase(ir->b);
+	}
       }
     } //if binary
 
@@ -203,7 +224,7 @@ static IR* createMove(Reg* d, Reg* b, const int imm){
   ir->b->isImm = true;
   ir->b->imm = imm;
   return ir;
-} //createIRfrom()()
+} //createMove()
 
 bool peephole(BasicBlock* bb){
 
@@ -328,3 +349,4 @@ bool peephole(BasicBlock* bb){
   } //for iter_inst
   return changed;
 } //peephole()
+

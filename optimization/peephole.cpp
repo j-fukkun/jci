@@ -6,7 +6,6 @@ bool optimize_bb(BasicBlock* bb){
   bool changed = false;
   changed = changed || peephole(bb);
   changed = changed || constantPropagation_bb(bb);
-  changed = changed || DCE_bb(bb);
   
   return changed;
 } //optimize_bb()
@@ -120,101 +119,6 @@ bool constantPropagation_bb(BasicBlock* bb){
   return changed;
 } //constantPropagation_bb()
 
-bool DCE_bb(BasicBlock* bb){
-
-  bool changed = false;
-  std::unordered_set<Reg*> table = {};
-
-  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
-    IR* ir = *iter_inst;
-    
-    if(ir->opcode != IR_STORE
-       && ir->opcode != IR_STORE_SPILL
-       && ir->opcode != IR_STORE_ARG
-       && ir->opcode != IR_RETURN
-       && ir->opcode != IR_BR
-       && ir->opcode != IR_JMP
-       && ir->opcode != IR_JMP_LABEL
-       && ir->opcode != IR_LABEL
-       && ir->opcode != IR_FUNCALL
-       && ir->opcode != IR_CAST
-       && ir->opcode != IR_LVAR
-       ){
-      table.insert(ir->d);
-    } //if
-
-    //binary
-    if(isBinaryOp(ir->opcode)){
-      if(ir->opcode == IR_DIV || ir->opcode == IR_MOD){
-	if(table.find(ir->a) != table.end()){
-	  table.erase(ir->a);
-	}
-	if(table.find(ir->b) != table.end()){
-	  table.erase(ir->b);
-	}
-      } else {
-	if(table.find(ir->a) != table.end() && !ir->a->isImm){
-	  table.erase(ir->a);
-	}
-	if(table.find(ir->b) != table.end() && !ir->b->isImm){
-	  table.erase(ir->b);
-	}
-      }
-    } //if binary
-
-    //unary
-    if(isUnaryOp(ir->opcode)){
-      if(table.find(ir->b) != table.end() && !ir->b->isImm){
-	table.erase(ir->b);
-      }
-    } //if unary
-
-    if(ir->opcode == IR_STORE
-       || ir->opcode == IR_STORE_SPILL
-       || ir->opcode == IR_RETURN
-       || ir->opcode == IR_CAST){
-      if(table.find(ir->a) != table.end() && !ir->a->isImm){
-	table.erase(ir->a);
-      }
-    }
-    
-    //fuction call
-    if(ir->opcode == IR_FUNCALL){
-      for(int i = 0; i < ir->num_args; i++){
-	if(table.find(ir->args[i]) != table.end()
-	   && !ir->args[i]->isImm){
-	  table.erase(ir->args[i]);
-	}
-      } //for
-    } //if funcall
-    
-  } //for iter_inst
-
-  
-  //IRs in table are dead code
-  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end();){
-    IR* ir = *iter_inst;
-    if(ir->opcode != IR_STORE
-       && ir->opcode != IR_STORE_SPILL
-       && ir->opcode != IR_RETURN
-       && ir->opcode != IR_BR
-       && ir->opcode != IR_JMP
-       && ir->opcode != IR_JMP_LABEL
-       && ir->opcode != IR_LABEL
-       && ir->opcode != IR_FUNCALL
-       && ir->opcode != IR_CAST
-       ){      
-      if(table.find(ir->d) != table.end()){
-	iter_inst = bb->instructions.erase(iter_inst);
-	changed = true;
-	continue;
-      }      
-    } //if
-    ++iter_inst;
-  } //for iter_inst
-
-  return changed;
-} //DCE_bb()
 
 static IR* createMove(Reg* d, Reg* b, const int imm){
   IR* ir = new IR();

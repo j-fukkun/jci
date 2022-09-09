@@ -1,13 +1,14 @@
 
-int func(int a, int b, int n){
-  int c;
-  if(n < 10){
-    c = a + b;
+void func(){
+  int c = 0;
+  for(int j = 0; j < 10; j++){
+    for(int i = 0; i < 10; i++){
+      c = c + 1;
+    }
   }
-  c = a + b;
-  c = a + 5;
-  return c;
+  
 }
+
 
 int main(){
   int a;

@@ -6,5 +6,5 @@ bool optimize_bb(BasicBlock*);
 bool isBinaryOp(const IRKind opcode);
 bool isUnaryOp(const IRKind opcode);
 bool constantPropagation_bb(BasicBlock*);
-bool DCE_bb(BasicBlock*);
+bool eliminateRedundantLoadFromStack(BasicBlock*);
 bool peephole(BasicBlock*);

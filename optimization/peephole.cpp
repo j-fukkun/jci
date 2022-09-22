@@ -6,6 +6,7 @@ bool optimize_bb(BasicBlock* bb){
   bool changed = false;
   changed = changed || peephole(bb);
   changed = changed || constantPropagation_bb(bb);
+  changed = changed || eliminateRedundantLoadFromStack(bb);
   
   return changed;
 } //optimize_bb()
@@ -118,6 +119,35 @@ bool constantPropagation_bb(BasicBlock* bb){
   } //for iter_inst
   return changed;
 } //constantPropagation_bb()
+
+bool eliminateRedundantLoadFromStack(BasicBlock* bb){
+
+  bool changed = false;
+  using P = std::pair<int, Reg*>;
+  std::unordered_map<int, Reg*> mapOffset_Reg = {};
+  
+  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
+    IR* ir = *iter_inst;
+    if(ir->opcode == IR_LVAR){
+      auto it = mapOffset_Reg.find(ir->lvar->offset);
+      if(it != mapOffset_Reg.end()){
+	IR* new_ir = new IR();
+	new_ir->opcode = IR_MOV;
+	new_ir->d = ir->d;
+	new_ir->b = it->second;
+	new_ir->b->isImm = false;
+	iter_inst = bb->instructions.erase(iter_inst);
+	iter_inst = bb->instructions.insert(iter_inst, new_ir);	
+	changed = true;
+      } else {	
+	mapOffset_Reg.insert(P{ir->lvar->offset, ir->d});
+      } //if
+    } //if
+    
+  } //for iter_inst
+  
+  return changed;
+} //eliminateRedundantLoadFromStack()
 
 
 static IR* createMove(Reg* d, Reg* b, const int imm){

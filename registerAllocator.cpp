@@ -125,7 +125,7 @@ void spill_store(std::list<IR*>& inst_list, IR* ir) {
   IR* ir2 = new IR();
   ir2->opcode = IR_STORE_SPILL;
   ir2->a = r;
-  ir2->lvar = r->lvar;
+  ir2->lvar = r->lvar; //ir2->lvar = ir->lvar;  
   inst_list.push_back(ir2);
 } //spill_store()
 
@@ -136,7 +136,7 @@ void spill_load(std::list<IR*>& inst_list, IR* ir, Reg* r) {
   IR* ir2 = new IR();
   ir2->opcode = IR_LOAD_SPILL;
   ir2->d = r;
-  ir2->lvar = r->lvar;
+  ir2->lvar = r->lvar; //ir2->lvar = ir->lvar;
   inst_list.push_back(ir2);
 } //spill_load()
 

@@ -464,6 +464,9 @@ Reg* gen_expr_IR(Node* node){
     return nullptr;
   } //ND_GOTO
   case ND_LABEL: {
+    BasicBlock* bb = new_bb();
+    jmp(bb);
+    out = bb;
     label(node->label_name);
     gen_expr_IR(node->lhs);
     return nullptr;

@@ -41,13 +41,13 @@ int main(int argc, char **argv){
   Program* prog = program();
 
   gen_IR(prog);
-  
+
+  //calculate the size of stack flame
   Function* fn = prog->fns;
   for(fn; fn; fn = fn->next){
     int offset = 0;
     Var* lvar = fn->locals;
-    for(lvar; lvar; lvar = lvar->next){
-      //offset += 8;
+    for(lvar; lvar; lvar = lvar->next){      
       offset = align_to(offset, lvar->type->align);
       offset += lvar->type->size;
       lvar->offset = offset;
@@ -57,28 +57,29 @@ int main(int argc, char **argv){
 
   std::string filename_str = filename;
   dump_IR(prog, std::string(filename_str + ".lir"));
-
+  
   optimize(prog);
 
   dump_IR(prog, std::string(filename_str + "_optimized.lir"));
   
   allocateRegister(prog);
 
-  //スタックサイズを計算
-  /*
-  Function* fn = prog->fns;
+  //re-calculate the size of stack flame
+  /*Function**/ fn = prog->fns;
   for(fn; fn; fn = fn->next){
-    int offset = 0;
+    int offset = fn->stack_size;
     Var* lvar = fn->locals;
     for(lvar; lvar; lvar = lvar->next){
-      //offset += 8;
+      if(lvar->offset != 0)
+	continue;
       offset = align_to(offset, lvar->type->align);
       offset += lvar->type->size;
       lvar->offset = offset;
     } //for
     fn->stack_size = offset;
   } //for
-  */
+
+  dump_IR(prog, std::string(filename_str + "_allocated.lir"));
   
   gen_x86(prog);
   

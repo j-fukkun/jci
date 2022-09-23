@@ -7,6 +7,7 @@ bool optimize_bb(BasicBlock* bb){
   changed = changed || peephole(bb);
   changed = changed || constantPropagation_bb(bb);
   changed = changed || eliminateRedundantLoadFromStack(bb);
+  changed = changed || eliminateRedundantLoadofGlobalVar(bb);
   
   return changed;
 } //optimize_bb()
@@ -148,6 +149,35 @@ bool eliminateRedundantLoadFromStack(BasicBlock* bb){
   
   return changed;
 } //eliminateRedundantLoadFromStack()
+
+bool eliminateRedundantLoadofGlobalVar(BasicBlock* bb){
+
+  bool changed = false;
+  using P = std::pair<std::string, Reg*>;
+  std::unordered_map<std::string, Reg*> mapName_Reg = {};
+  
+  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
+    IR* ir = *iter_inst;
+    if(ir->opcode == IR_LABEL_ADDR){
+      auto it = mapName_Reg.find(std::string(ir->name));
+      if(it != mapName_Reg.end()){
+	IR* new_ir = new IR();
+	new_ir->opcode = IR_MOV;
+	new_ir->d = ir->d;
+	new_ir->b = it->second;
+	new_ir->b->isImm = false;
+	iter_inst = bb->instructions.erase(iter_inst);
+	iter_inst = bb->instructions.insert(iter_inst, new_ir);	
+	changed = true;
+      } else {	
+	mapName_Reg.insert(P{std::string(ir->name), ir->d});
+      } //if
+    } //if
+    
+  } //for iter_inst
+  
+  return changed;
+} //eliminateRedundantLoadofGlobalVar()
 
 
 static IR* createMove(Reg* d, Reg* b, const int imm){

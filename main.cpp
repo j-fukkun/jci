@@ -64,7 +64,7 @@ int main(int argc, char **argv){
   
   allocateRegister(prog);
 
-  //re-calculate the size of stack flame
+  //re-calculate the size of stack flame for spilled registers
   /*Function**/ fn = prog->fns;
   for(fn; fn; fn = fn->next){
     int offset = fn->stack_size;

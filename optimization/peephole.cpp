@@ -8,6 +8,8 @@ bool optimize_bb(BasicBlock* bb){
   changed = changed || constantPropagation_bb(bb);
   changed = changed || eliminateRedundantLoadFromStack(bb);
   changed = changed || eliminateRedundantLoadofGlobalVar(bb);
+  //changed = changed || copyPropagation_bb(bb);
+  changed = changed || mem2reg_bb(bb);
   
   return changed;
 } //optimize_bb()
@@ -121,6 +123,79 @@ bool constantPropagation_bb(BasicBlock* bb){
   return changed;
 } //constantPropagation_bb()
 
+bool copyPropagation_bb(BasicBlock* bb){
+
+  bool changed = false;
+  using P = std::pair<Reg*, Reg*>;
+  std::unordered_map<Reg*, Reg*> table = {}; //d --> b
+  
+  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
+    IR* ir = *iter_inst;
+
+    //generation
+    if(ir->opcode == IR_MOV && !ir->b->isImm){
+      table.insert(P{ir->d, ir->b});
+    } //if IR_MOV
+
+    //kill
+    /*
+    if(ir->opcode == IR_CAST){
+      table.erase(ir->a);
+    }
+    */
+
+    //replace
+    if(isBinaryOp(ir->opcode)){
+      if(table.find(ir->a) != table.end() && !ir->a->isImm){	
+	ir->a = table.find(ir->a)->second;
+	changed = true;
+      }
+      if(table.find(ir->b) != table.end() && !ir->b->isImm){	
+	ir->b = table.find(ir->b)->second;
+	changed = true;
+      }
+    } //if bin-op
+
+    //unary
+    if(isUnaryOp(ir->opcode)){
+      if(table.find(ir->b) != table.end() && !ir->b->isImm){
+	ir->b = table.find(ir->b)->second;
+	changed = true;
+      }
+    } //if unary-ops
+    
+    if(ir->opcode == IR_RETURN || ir->opcode == IR_CAST){
+      if(table.find(ir->a) != table.end() && !ir->a->isImm){
+	ir->a = table.find(ir->a)->second;
+	changed = true;
+      }
+    } //if RETURN || CAST
+
+    if(ir->opcode == IR_JMP){
+      if(ir->bbarg){
+	if(table.find(ir->bbarg) != table.end() && !ir->bbarg->isImm){
+	  ir->bbarg = table.find(ir->bbarg)->second;
+	  changed = true;
+	}
+      }
+    } //if JMP
+
+    //function call
+    if(ir->opcode == IR_FUNCALL){
+      for(int i = 0; i < ir->num_args; i++){
+	if(table.find(ir->args[i]) != table.end()
+	   && !ir->args[i]->isImm){
+	  ir->args[i] = table.find(ir->args[i])->second;
+	  changed = true;
+	}
+      } //for
+    } //if FUNCALL
+    
+  } //for iter_inst
+  return changed;
+} //copyPropagation_bb()
+
+
 bool eliminateRedundantLoadFromStack(BasicBlock* bb){
 
   bool changed = false;
@@ -178,6 +253,37 @@ bool eliminateRedundantLoadofGlobalVar(BasicBlock* bb){
   
   return changed;
 } //eliminateRedundantLoadofGlobalVar()
+
+bool mem2reg_bb(BasicBlock* bb){
+
+  bool changed = false;
+  using P = std::pair<Reg*, Reg*>;
+  std::unordered_map<Reg*, Reg*> mapLoad = {}; //ir->b --> ir->d
+
+  for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
+    IR* ir = *iter_inst;
+    if(ir->opcode == IR_LOAD){
+      auto it = mapLoad.find(ir->b);
+      if(it != mapLoad.end()){
+	IR* new_ir = new IR();
+	new_ir->opcode = IR_MOV;
+	new_ir->d = ir->d;
+	new_ir->b = it->second;
+	//new_ir->b->isImm = false;
+	iter_inst = bb->instructions.erase(iter_inst);
+	iter_inst = bb->instructions.insert(iter_inst, new_ir);
+	changed = true;
+      } else {
+	mapLoad.insert(P{ir->b, ir->d});
+      }      
+    } else if(ir->opcode == IR_STORE){
+      mapLoad.clear(); //conservative
+      mapLoad.insert(P{ir->a, ir->b});
+    }     
+  } //for iter_inst
+  
+  return changed;
+} //mem2reg_bb()
 
 
 static IR* createMove(Reg* d, Reg* b, const int imm){

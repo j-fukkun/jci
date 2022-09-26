@@ -24,6 +24,7 @@ Reg* new_reg(){
   reg->vn = nreg++;
   reg->rn = -1;
   reg->isImm = false;
+  reg->last_use = 0;
   return reg;
 } //new_reg()
 

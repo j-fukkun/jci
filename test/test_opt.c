@@ -10,9 +10,13 @@ int assert(int expected, int actual, char* code) {
   }
 }
 
+void f(){return;}
+
 int test_mem2reg(int x, int y){
   int a = x;
   a = a + y;
+  f();
+  int b = a + 1;
   return a;
 }
 
@@ -39,7 +43,7 @@ int main(){
   {int x=6&3; assert(2, x, "int x=6&3; x;");}
   {int x=15^5; assert(10, x, "int x=15^5; x;");}
   
-  assert(3, test_mem2reg(1,2), "test_mem2reg(1,2);");
+  {int x = test_mem2reg(1,2); assert(3, x, "test_mem2reg(1,2);");}
   
   printf("OK.\n");
   return 0;

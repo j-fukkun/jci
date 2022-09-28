@@ -316,8 +316,7 @@ void gen(const IR* ir){
     printf("  lea %s, %s\n", regs[d].c_str(), ir->name);
     break;
   case IR_BR:
-    if(ir->b->isImm){
-      //printf("  cmp %d, 0\n", ir->b->imm);
+    if(ir->b->isImm){      
       if(ir->b->imm == 0){
 	printf("  jmp .L%d\n", ir->bb2->label);
       } else {
@@ -325,9 +324,11 @@ void gen(const IR* ir){
       }
     } else {
       printf("  cmp %s, 0\n", regs[b].c_str());
+      printf("  jne .L%d\n", ir->bb1->label);
+      printf("  jmp .L%d\n", ir->bb2->label);
     }
-    printf("  jne .L%d\n", ir->bb1->label);
-    printf("  jmp .L%d\n", ir->bb2->label);
+    //printf("  jne .L%d\n", ir->bb1->label);
+    //printf("  jmp .L%d\n", ir->bb2->label);
     break;
   case IR_JMP:
     if (ir->bbarg){

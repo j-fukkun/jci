@@ -700,7 +700,11 @@ void dump_IR(Program* prog, const std::string filename){
 	  break;
 	case IR_RETURN:
 	  if(ir->a != nullptr){
-	    fprintf(file, "  RETURN v%d\n", ir->a->vn);
+	    if(ir->a->isImm){
+	      fprintf(file, "  RETURN %d\n", ir->a->imm);
+	    } else {
+	      fprintf(file, "  RETURN v%d\n", ir->a->vn);
+	    }
 	  } else {
 	    fprintf(file, "  RETURN\n");
 	  }
@@ -729,7 +733,7 @@ void dump_IR(Program* prog, const std::string filename){
 	  fprintf(file, "L.%s\n", ir->label);
 	  break;
 	case IR_FUNCALL:
-	  fprintf(file, "  call %s(", ir->funcname);
+	  fprintf(file, "  v%d = call %s(", ir->d->vn, ir->funcname);
 	  if(ir->num_args != 0){
 	    if(ir->args[0]->isImm){
 	      fprintf(file, "%d", ir->args[0]->imm);

@@ -44,6 +44,11 @@ int main(){
   {int x=15^5; assert(10, x, "int x=15^5; x;");}
   
   {int x = test_mem2reg(1,2); assert(3, x, "test_mem2reg(1,2);");}
+
+  {int x; if(0){x = 1;}else{x = 2;} assert(2, x, "if(0){x = 1;}else{x = 2;}");}
+  {int x; if(1){x = 1;}else{x = 2;} assert(1, x, "if(1){x = 1;}else{x = 2;}");}
+  {int x; if(5){x = 1;}else{x = 2;} assert(1, x, "if(5){x = 1;}else{x = 2;}");}
+  
   
   printf("OK.\n");
   return 0;

@@ -1,4 +1,4 @@
-This is my tiny C compiler, *jcc*.
+This is my tiny optimizing C compiler, *jcc*.
 
 *jcc* compiles the subset of C into an assembly code through the following steps:
 1. Lexical analysis: converts input strings into *tokens*.

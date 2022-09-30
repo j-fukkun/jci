@@ -432,6 +432,22 @@ bool peephole(BasicBlock* bb){
 	}
       }
     } //if(ir->opcode == IR_JMP)
+
+    if(ir->opcode == IR_BR && ir->b->isImm){
+      BasicBlock* bb = nullptr;
+      if(ir->b->imm == 0){
+	bb = ir->bb2;
+      } else {
+	bb = ir->bb1;
+      }
+      IR* jmp = new IR();
+      jmp->opcode = IR_JMP;
+      jmp->bb1 = bb;
+      jmp->bbarg = nullptr;
+      iter_inst = bb->instructions.erase(iter_inst);
+      iter_inst = bb->instructions.insert(iter_inst, jmp);
+      changed = true;
+    } //if(ir->opcode == IR_BR && ir->b->isImm)
       
   } //for iter_inst
   return changed;

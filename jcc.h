@@ -228,6 +228,10 @@ class Function{
   Node* node; //function body
   Var* locals; //local variables in function
   int stack_size;
+
+  //the unique node of CFG
+  BasicBlock* start_node;
+  BasicBlock* end_node;
 };
 
 struct Program{
@@ -401,11 +405,13 @@ class BasicBlock{
   int label;
   std::list<IR*> instructions;
 
-  // For liveness analysis
   std::list<BasicBlock*> succ;
   std::list<BasicBlock*> pred;
 
   Reg* param;
+
+  bool isStartNode;
+  bool isEndNode;
 };
 
 class IR{

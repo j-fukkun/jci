@@ -12,6 +12,11 @@ void optimize(Program* prog){
       }
     } //for iter_bbs
   } //for fn
+
+  fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    constructCFG(fn);
+  } //for fn
   
   return;
 } //optimize()

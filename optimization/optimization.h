@@ -4,6 +4,8 @@
 #include <utility>
 
 bool optimize_bb(BasicBlock*);
+void constructCFG(Function*);
+
 bool isBinaryOp(const IRKind opcode);
 bool isUnaryOp(const IRKind opcode);
 bool constantPropagation_bb(BasicBlock*);

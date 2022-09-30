@@ -8,6 +8,8 @@ BasicBlock* new_bb(){
   //BasicBlock* bb = (BasicBlock*)calloc(1, sizeof(BasicBlock));
   BasicBlock* bb = new BasicBlock();
   bb->label = nlabel++;
+  bb->isStartNode = false;
+  bb->isEndNode = false;
   func->bbs.push_back(bb);
   return bb;  
 } //new_bb()

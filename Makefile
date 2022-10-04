@@ -27,8 +27,8 @@ nqueen: jcc
 	./test/nqueen_jcc.out
 
 clean:
-	rm -f jcc *.o *~ tmp* a.out *.s *.lir
-	rm -f test/*.s test/*~ test/*.o test/test test/*.lir test/*.out
+	rm -f jcc *.o *~ tmp* a.out *.s *.lir *.png *.dot
+	rm -f test/*.s test/*~ test/*.o test/test test/*.lir test/*.out test/*.png test/*.dot
 	rm -f optimization/*.o optimization/*~
 
 .PHONY: test test_opt nqueen clean

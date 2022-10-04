@@ -17,6 +17,11 @@ void optimize(Program* prog){
   for(fn; fn; fn = fn->next){
     constructCFG(fn);
   } //for fn
+
+  fn = prog->fns;
+  for(fn; fn; fn = fn->next){    
+    printCFG(fn);
+  } //for fn
   
   return;
 } //optimize()

@@ -451,7 +451,7 @@ Reg* gen_binop_IR(const IRKind op, Node* node);
 Reg* gen_expr_IR(Node* node);
 void gen_IR(Program* prog);
 void dump_IR(Program* prog, const std::string filename);
-
+void print_IR(FILE* file, const IR*);
 
 //optimizer
 void optimize(Program* prog);

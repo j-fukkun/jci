@@ -8,3 +8,5 @@ jcc
 test/test
 *.lir
 *.txt
+*.png
+*.dot

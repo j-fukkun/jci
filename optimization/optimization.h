@@ -2,9 +2,11 @@
 #include <unordered_map>
 #include <string>
 #include <utility>
+#include <stdio.h>
 
 bool optimize_bb(BasicBlock*);
 void constructCFG(Function*);
+void printCFG(Function*);
 
 bool isBinaryOp(const IRKind opcode);
 bool isUnaryOp(const IRKind opcode);

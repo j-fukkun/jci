@@ -1,6 +1,6 @@
 #include "optimization.h"
 
-void add_edges(BasicBlock* bb){
+static void add_edges(BasicBlock* bb){
   
   if(bb->instructions.empty()) return;
   if(!bb->succ.empty()) return;
@@ -46,6 +46,7 @@ void constructCFG(Function* fn){
   //s --> the first basic block of fn
   BasicBlock* first = *(fn->bbs.begin());
   s->succ.push_back(first);
+  first->pred.push_back(s);
 
   //add edges of the body of fn
   add_edges(first);

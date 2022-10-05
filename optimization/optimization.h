@@ -1,3 +1,6 @@
+#ifndef OPTIMIZATION_H
+#define OPTIMIZATION_H
+
 #include "../jcc.h"
 #include <unordered_map>
 #include <string>
@@ -16,3 +19,7 @@ bool eliminateRedundantLoadFromStack(BasicBlock*);
 bool eliminateRedundantLoadofGlobalVar(BasicBlock*);
 bool mem2reg_bb(BasicBlock*);
 bool peephole(BasicBlock*);
+
+void eliminateUnreachableBBs(Function*);
+
+#endif

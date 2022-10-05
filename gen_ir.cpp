@@ -383,6 +383,7 @@ Reg* gen_expr_IR(Node* node){
     node->_continue = cond;
     node->_break = new_bb();
 
+    jmp(cond);
     out = cond;
     Reg* r = gen_expr_IR(node->cond);
     br(r, body, node->_break/*_break*/);

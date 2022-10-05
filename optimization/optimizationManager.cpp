@@ -20,6 +20,11 @@ void optimize(Program* prog){
 
   fn = prog->fns;
   for(fn; fn; fn = fn->next){    
+    eliminateUnreachableBBs(fn);
+  } //for fn
+
+  fn = prog->fns;
+  for(fn; fn; fn = fn->next){    
     printCFG(fn);
   } //for fn
   

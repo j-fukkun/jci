@@ -3,6 +3,8 @@
 static int nreg = 1;
 static Function* func = nullptr;
 static BasicBlock* out = nullptr;
+using L2B = std::pair<std::string, BasicBlock*>;
+std::unordered_map<std::string, BasicBlock*> mapLabel_BB = {};
 
 BasicBlock* new_bb(){
   //BasicBlock* bb = (BasicBlock*)calloc(1, sizeof(BasicBlock));
@@ -347,7 +349,6 @@ Reg* gen_expr_IR(Node* node){
     BasicBlock* body = new_bb();
     node->_continue = new_bb();
     node->_break = new_bb();
-    //BasicBlock* _break = new_bb();
 
     if(node->init){
       gen_expr_IR(node->init); //gen_stmt
@@ -357,7 +358,7 @@ Reg* gen_expr_IR(Node* node){
     out = cond;
     if(node->cond){
       Reg* r = gen_expr_IR(node->cond);
-      br(r, body, node->_break/*_break*/);
+      br(r, body, node->_break);
     } else {
       jmp(body);
     } //if
@@ -372,28 +373,31 @@ Reg* gen_expr_IR(Node* node){
     } //if
     jmp(cond);
 
-    //out = _break;
     out = node->_break;
+    BasicBlock* exit = new_bb();
+    jmp(exit);
+    out = exit;
     return nullptr;
   } //ND_FOR
   case ND_WHILE: {
     BasicBlock* cond = new_bb();
     BasicBlock* body = new_bb();
-    //BasicBlock* _break = new_bb();
     node->_continue = cond;
     node->_break = new_bb();
 
     jmp(cond);
     out = cond;
     Reg* r = gen_expr_IR(node->cond);
-    br(r, body, node->_break/*_break*/);
+    br(r, body, node->_break);
 
     out = body;
     gen_expr_IR(node->then); //gen_stmt
     jmp(cond);
 
-    //out = _break;
     out = node->_break;
+    BasicBlock* exit = new_bb();
+    jmp(exit);
+    out = exit;
     return nullptr;
   } //ND_WHILE
   case ND_DO_WHILE: {
@@ -412,6 +416,9 @@ Reg* gen_expr_IR(Node* node){
     br(r, body, node->_break);
 
     out = node->_break;
+    BasicBlock* exit = new_bb();
+    jmp(exit);
+    out = exit;
     return nullptr;
   } //ND_DO_WHILE
   case ND_SWITCH: {
@@ -455,12 +462,12 @@ Reg* gen_expr_IR(Node* node){
     jmp(node->target->_break);
     //ここで新しくbbを作るとbbの作成順序的に
     //そのbbの命令は後でコード生成されるので，おかしくなる
-    //out = new_bb(); 
+    out = new_bb(); 
     return nullptr; //break;
   } //ND_BREAK
   case ND_CONTINUE: {
     jmp(node->target->_continue);
-    //out = new_bb();
+    out = new_bb();
     return nullptr;
   } //ND_CONTINUE
   case ND_GOTO: {
@@ -472,6 +479,7 @@ Reg* gen_expr_IR(Node* node){
     jmp(bb);
     out = bb;
     label(node->label_name);
+    mapLabel_BB.insert(L2B{std::string(node->label_name), bb});
     gen_expr_IR(node->lhs);
     return nullptr;
   } //ND_LABEL
@@ -709,24 +717,24 @@ void print_IR(FILE* file, const IR* ir){
     fprintf(file, "  Load_Spill v%d [rbp-%d]\n", ir->d->vn, ir->lvar->offset);
     break;
   case IR_RETURN:
-	  if(ir->a != nullptr){
-	    if(ir->a->isImm){
-	      fprintf(file, "  RETURN %d\n", ir->a->imm);
-	    } else {
-	      fprintf(file, "  RETURN v%d\n", ir->a->vn);
-	    }
-	  } else {
-	    fprintf(file, "  RETURN\n");
-	  }
-	  break;
-	case IR_BR:
+    if(ir->a != nullptr){
+      if(ir->a->isImm){
+        fprintf(file, "  RETURN %d\n", ir->a->imm);
+      } else {
+        fprintf(file, "  RETURN v%d\n", ir->a->vn);
+      }
+    } else {
+        fprintf(file, "  RETURN\n");
+    }
+    break;
+  case IR_BR:
 	  if(ir->b->isImm){
 	    fprintf(file, "  br %d, BB_%d, BB_%d\n", ir->b->imm, ir->bb1->label, ir->bb2->label);
 	  } else {
 	    fprintf(file, "  br v%d, BB_%d, BB_%d\n", ir->b->vn, ir->bb1->label, ir->bb2->label);
 	  }
 	  break;
-	case IR_JMP:
+  case IR_JMP:
 	  if(ir->bbarg){
 	    if(ir->bbarg->isImm){
 	      fprintf(file, "  BBARG: v%d = %d\n", ir->bb1->param->vn, ir->bbarg->imm);
@@ -736,13 +744,13 @@ void print_IR(FILE* file, const IR* ir){
 	  }
 	  fprintf(file, "  jmp BB_%d\n", ir->bb1->label);
 	  break;
-	case IR_JMP_LABEL:
+  case IR_JMP_LABEL:
 	  fprintf(file, "  jmp L.%s\n", ir->dst_label);
 	  break;
-	case IR_LABEL:
+  case IR_LABEL:
 	  fprintf(file, "L.%s\n", ir->label);
 	  break;
-	case IR_FUNCALL:
+  case IR_FUNCALL:
 	  fprintf(file, "  v%d = call %s(", ir->d->vn, ir->funcname);
 	  if(ir->num_args != 0){
 	    if(ir->args[0]->isImm){
@@ -760,7 +768,7 @@ void print_IR(FILE* file, const IR* ir){
 	  }
 	  fprintf(file, ")\n");
 	  break;
-	case IR_PTR_ADD:
+  case IR_PTR_ADD:
 	  if(ir->a->isImm){
 	    fprintf(file, "  PTR_ADD: v%d = %d + v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
 	  } else if(ir->b->isImm){
@@ -769,7 +777,7 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  PTR_ADD: v%d = v%d + v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_PTR_SUB:
+  case IR_PTR_SUB:
 	  if(ir->a->isImm){
 	    fprintf(file, "  PTR_SUB: v%d = %d - v%d\n", ir->d->vn, ir->a->imm, ir->b->vn);
 	  } else if(ir->b->isImm){
@@ -778,13 +786,13 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  PTR_SUB: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_PTR_DIFF:
+  case IR_PTR_DIFF:
 	  fprintf(file, "  PTR_DIFF: v%d = v%d - v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  break;
-	case IR_LABEL_ADDR:
+  case IR_LABEL_ADDR:
 	  fprintf(file, "  Load_GLOBAL v%d, %s\n", ir->d->vn, ir->name);
 	  break;
-	case IR_SHL:
+  case IR_SHL:
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d << %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
@@ -795,7 +803,7 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  v%d = v%d << v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_SHR:
+  case IR_SHR:
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d >> %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
@@ -806,7 +814,7 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  v%d = v%d >> v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_BITOR:
+  case IR_BITOR:
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d | %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
@@ -817,7 +825,7 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  v%d = v%d | v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_BITAND:
+  case IR_BITAND:
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d & %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
@@ -828,7 +836,7 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  v%d = v%d & v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_BITXOR:
+  case IR_BITXOR:
 	  if(ir->a->isImm && ir->b->isImm){
 	    fprintf(file, "  v%d = %d ^ %d\n", ir->d->vn, ir->a->imm, ir->b->imm);
 	  } else if(ir->a->isImm){
@@ -839,10 +847,10 @@ void print_IR(FILE* file, const IR* ir){
 	    fprintf(file, "  v%d = v%d ^ v%d\n", ir->d->vn, ir->a->vn, ir->b->vn);
 	  }
 	  break;
-	case IR_CAST:
+  case IR_CAST:
 	  fprintf(file, "  CAST: v%d = v%d\n", ir->a->vn, ir->a->vn);
 	  break;
-	default:
+  default:
 	  break;
-	} //switch
+  } //switch
 } //print_IR()

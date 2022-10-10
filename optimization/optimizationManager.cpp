@@ -13,20 +13,14 @@ void optimize(Program* prog){
     } //for iter_bbs
   } //for fn
 
-  fn = prog->fns;
-  for(fn; fn; fn = fn->next){
-    constructCFG(fn);
-  } //for fn
-
-  fn = prog->fns;
-  for(fn; fn; fn = fn->next){    
-    eliminateUnreachableBBs(fn);
-  } //for fn
-
-  fn = prog->fns;
-  for(fn; fn; fn = fn->next){    
-    printCFG(fn);
-  } //for fn
   
+  constructCFGs(prog);
+
+  eliminateUnreachableBBs(prog);
+
+  simplifyCFGs(prog);
+  
+  printCFGs(prog);
+    
   return;
 } //optimize()

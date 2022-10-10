@@ -1,6 +1,6 @@
 #include "optimization.h"
 
-void eliminateUnreachableBBs(Function* fn){
+static void eliminateUnreachableBBs_Fn(Function* fn){
   //eliminate BBs that do not have any predecessors
   for(auto iter_bbs = fn->bbs.begin(); iter_bbs != fn->bbs.end(); ++iter_bbs){
     BasicBlock* bb = *iter_bbs;
@@ -25,4 +25,13 @@ void eliminateUnreachableBBs(Function* fn){
     
   } //for iter_bbs
   
+} //eliminateUnreachableBBs_Fn()
+
+void eliminateUnreachableBBs(Program* prog){
+
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    eliminateUnreachableBBs_Fn(fn);
+  }
+  return;
 } //eliminateUnreachableBBs()

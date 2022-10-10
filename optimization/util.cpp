@@ -7,6 +7,12 @@ static void add_edges(BasicBlock* bb){
 
   IR* last = bb->instructions.back();
 
+  if(last->opcode == IR_JMP_LABEL){
+    auto iter = mapLabel_BB.find(std::string(last->dst_label));
+    assert(iter != mapLabel_BB.end());
+    last->bb1 = iter->second;
+  }
+
   if(last->bb1){
     bb->succ.push_back(last->bb1);
     last->bb1->pred.push_back(bb);
@@ -23,7 +29,7 @@ static void add_edges(BasicBlock* bb){
 
 } //add_edges()
 
-void constructCFG(Function* fn){
+static void constructCFG(Function* fn){
   //This function constructs the Control Flow Graph (CFG) of fn.
   //While constructing it,
   //the function adds the unique start node "s" and end node "e".
@@ -61,6 +67,15 @@ void constructCFG(Function* fn){
   } //for iter_bbs
   
 } //constructCFG()
+
+void constructCFGs(Program* prog){
+  
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    constructCFG(fn);
+  }
+  return;
+} //constructCFGs()
 
 static void print(FILE* file, const IR* ir){
   
@@ -317,7 +332,7 @@ static void print(FILE* file, const IR* ir){
 } //print()
 
 
-void printCFG(Function* fn){
+static void printCFG(Function* fn){
   
   std::string dot = std::string(fn->name) + ".dot";
   FILE* f = fopen(dot.c_str(), "w");
@@ -355,3 +370,71 @@ void printCFG(Function* fn){
   fprintf(f, "}");
   fclose(f);
 } //printCFG()
+
+void printCFGs(Program* prog){
+
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    printCFG(fn);
+  }
+  return;
+} //printCFGs()
+
+static bool simplifyCFG(Function* fn){
+  //This function combines bb1 and bb2,
+  //where bb1 is the unique predecessor of bb2,
+  //and bb2 is the unique successor of bb1.
+  //Thus, this function eliminates the unconditional jump instruction of bb1,
+  //the label of bb2, and the edge between bb1 and bb2.
+
+  bool changed = false;
+  for(auto iter_bbs = fn->bbs.begin(); iter_bbs != fn->bbs.end(); ++iter_bbs){
+    BasicBlock* bb = *iter_bbs;
+    if(bb->succ.size() == 1){
+      auto it_s = bb->succ.begin();
+      BasicBlock* s = *it_s;
+      if(!s->isEndNode && s->pred.size() == 1){
+	//combine bb and s
+	//delete bb's jmp
+	auto it_last = bb->instructions.end();
+	--it_last;
+	assert((*it_last)->opcode == IR_JMP || (*it_last)->opcode == IR_JMP_LABEL);
+	if((*it_last)->bbarg){
+	  IR* ir = new IR();
+	  ir->opcode = IR_MOV;
+	  ir->d = (*it_last)->bb1->param;
+	  ir->b = (*it_last)->bbarg;
+	  bb->instructions.insert(it_last, ir);
+	}
+	bb->instructions.erase(it_last);
+
+	//copy bb's instructions into s
+	for(auto s_inst = s->instructions.begin(); s_inst != s->instructions.end(); ++s_inst){
+	  IR* i = *s_inst;	  
+	  bb->instructions.insert(bb->instructions.end(), i);	  
+	} //for s_inst
+
+	//change edges	
+	std::copy(s->succ.begin(), s->succ.end(), std::back_inserter(bb->succ));
+	bb->succ.remove(s);
+	fn->bbs.remove(s);
+	//iter_bbs = fn->bbs.erase(iter_bbs);
+	//--iter_bbs;
+	changed = true;
+      } //if(!s->isEndNode && s->pred.size() == 1)
+    } //if(bb->succ.size() == 1)
+  } //for iter_bbs
+  return changed;
+} //simplifyCFG()
+
+void simplifyCFGs(Program* prog){
+
+  Function* fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    bool changed = false;
+    do {
+      changed = simplifyCFG(fn);
+    } while(changed);
+  } //for
+  return;
+} //simplifyCFGs()

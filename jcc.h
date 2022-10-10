@@ -442,7 +442,7 @@ class IR{
   char* dst_label; //destination of goto
 };
 
-
+extern std::unordered_map<std::string, BasicBlock*> mapLabel_BB;
 IR* new_ir(const IRKind opcode);
 Reg* new_reg();
 Reg* new_imm(const int imm);

@@ -6,20 +6,17 @@
 #include <string>
 #include <utility>
 #include <stdio.h>
+#include <algorithm>
 
+//local
 bool optimize_bb(BasicBlock*);
-void constructCFG(Function*);
-void printCFG(Function*);
 
-bool isBinaryOp(const IRKind opcode);
-bool isUnaryOp(const IRKind opcode);
-bool constantPropagation_bb(BasicBlock*);
-bool copyPropagation_bb(BasicBlock*);
-bool eliminateRedundantLoadFromStack(BasicBlock*);
-bool eliminateRedundantLoadofGlobalVar(BasicBlock*);
-bool mem2reg_bb(BasicBlock*);
-bool peephole(BasicBlock*);
+//util
+void constructCFGs(Program*);
+void printCFGs(Program*);
+void simplifyCFGs(Program*);
 
-void eliminateUnreachableBBs(Function*);
+//global
+void eliminateUnreachableBBs(Program*);
 
 #endif

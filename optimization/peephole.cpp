@@ -1,20 +1,6 @@
 #include "optimization.h"
 
-bool optimize_bb(BasicBlock* bb){
-  //changed IR --> return true
-  //otherwise --> return false
-  bool changed = false;
-  changed = changed || peephole(bb);
-  changed = changed || constantPropagation_bb(bb);
-  changed = changed || eliminateRedundantLoadFromStack(bb);
-  changed = changed || eliminateRedundantLoadofGlobalVar(bb);
-  //changed = changed || copyPropagation_bb(bb);
-  changed = changed || mem2reg_bb(bb);
-  
-  return changed;
-} //optimize_bb()
-
-bool isBinaryOp(const IRKind opcode){
+static bool isBinaryOp(const IRKind opcode){
   return opcode == IR_ADD
     || opcode == IR_SUB
     || opcode == IR_MUL
@@ -34,7 +20,7 @@ bool isBinaryOp(const IRKind opcode){
     || opcode == IR_BITXOR;
 } //isBinaryOp()
 
-bool isUnaryOp(const IRKind opcode){
+static bool isUnaryOp(const IRKind opcode){
   return opcode == IR_MOV
     //|| opcode == IR_RETURN
     || opcode == IR_STORE
@@ -42,7 +28,7 @@ bool isUnaryOp(const IRKind opcode){
     || opcode == IR_BR;
 } //isUnaryOp()
 
-bool constantPropagation_bb(BasicBlock* bb){
+static bool constantPropagation_bb(BasicBlock* bb){
 
   bool changed = false;
   using cons = std::pair<Reg*, int>;
@@ -123,7 +109,7 @@ bool constantPropagation_bb(BasicBlock* bb){
   return changed;
 } //constantPropagation_bb()
 
-bool copyPropagation_bb(BasicBlock* bb){
+static bool copyPropagation_bb(BasicBlock* bb){
 
   bool changed = false;
   using P = std::pair<Reg*, Reg*>;
@@ -198,7 +184,7 @@ bool copyPropagation_bb(BasicBlock* bb){
 } //copyPropagation_bb()
 
 
-bool eliminateRedundantLoadFromStack(BasicBlock* bb){
+static bool eliminateRedundantLoadFromStack(BasicBlock* bb){
 
   bool changed = false;
   using P = std::pair<int, Reg*>;
@@ -227,7 +213,7 @@ bool eliminateRedundantLoadFromStack(BasicBlock* bb){
   return changed;
 } //eliminateRedundantLoadFromStack()
 
-bool eliminateRedundantLoadofGlobalVar(BasicBlock* bb){
+static bool eliminateRedundantLoadofGlobalVar(BasicBlock* bb){
 
   bool changed = false;
   using P = std::pair<std::string, Reg*>;
@@ -256,7 +242,7 @@ bool eliminateRedundantLoadofGlobalVar(BasicBlock* bb){
   return changed;
 } //eliminateRedundantLoadofGlobalVar()
 
-bool mem2reg_bb(BasicBlock* bb){
+static bool mem2reg_bb(BasicBlock* bb){
 
   bool changed = false;
   using P = std::pair<Reg*, Reg*>;
@@ -300,7 +286,7 @@ static IR* createMove(Reg* d, Reg* b, const int imm){
   return ir;
 } //createMove()
 
-bool peephole(BasicBlock* bb){
+static bool peephole(BasicBlock* bb){
 
   bool changed = false;
   for(auto iter_inst = bb->instructions.begin(); iter_inst != bb->instructions.end(); ++iter_inst){
@@ -422,10 +408,11 @@ bool peephole(BasicBlock* bb){
       } //BITXOR
     } //if isBinaryOp(ir->opcode) && ir->a->isImm && ir->b->isImm
 
-    if(ir->opcode == IR_JMP && !ir->bbarg){
+    if((ir->opcode == IR_JMP && !ir->bbarg) || ir->opcode == IR_JMP_LABEL){
       auto next = std::next(iter_inst, 1);
       if(next != bb->instructions.end()){
-	if((*next)->opcode == IR_JMP && !(*next)->bbarg){
+	if(((*next)->opcode == IR_JMP && !(*next)->bbarg)
+	   || (*next)->opcode == IR_JMP_LABEL){
 	  //consecutive jmp instruction
 	  auto del_it = bb->instructions.erase(next);	
 	  changed = true;
@@ -453,3 +440,16 @@ bool peephole(BasicBlock* bb){
   return changed;
 } //peephole()
 
+bool optimize_bb(BasicBlock* bb){
+  //changed IR --> return true
+  //otherwise --> return false
+  bool changed = false;
+  changed = changed || peephole(bb);
+  changed = changed || constantPropagation_bb(bb);
+  changed = changed || eliminateRedundantLoadFromStack(bb);
+  changed = changed || eliminateRedundantLoadofGlobalVar(bb);
+  //changed = changed || copyPropagation_bb(bb);
+  changed = changed || mem2reg_bb(bb);
+  
+  return changed;
+} //optimize_bb()

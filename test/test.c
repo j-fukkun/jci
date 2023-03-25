@@ -780,6 +780,10 @@ int main(){
 
   assert(6, add_all3(1,2,3,0), "add_all3(1,2,3,0)");
   assert(5, add_all3(1,2,3,-1,0), "add_all3(1,2,3,-1,0)");
+
+  assert(1, 1 \
+	 , "backslash_newline test" \
+	 );
   
   printf("OK.\n");
   return 0;

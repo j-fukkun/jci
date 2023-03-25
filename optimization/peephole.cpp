@@ -446,7 +446,7 @@ bool optimize_bb(BasicBlock* bb){
   bool changed = false;
   changed = changed || peephole(bb);
   changed = changed || constantPropagation_bb(bb);
-  changed = changed || eliminateRedundantLoadFromStack(bb);
+  //changed = changed || eliminateRedundantLoadFromStack(bb);
   changed = changed || eliminateRedundantLoadofGlobalVar(bb);
   //changed = changed || copyPropagation_bb(bb);
   changed = changed || mem2reg_bb(bb);

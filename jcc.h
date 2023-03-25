@@ -43,7 +43,7 @@ struct Token{
 };
 
 //input program
-extern char* user_input;
+//extern char* user_input;
 
 /*current token*/
 extern Token* token;
@@ -69,6 +69,7 @@ const bool is_alphabet_or_number(char c);
 const bool startswith(char* p, const char* q);
 const char* startswith_reserved(char* p);
 Token* tokenize();
+Token* tokenize_file(char* filename);
 
 
 //

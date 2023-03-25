@@ -1,31 +1,8 @@
 #include "jcc.h"
 
-char* user_input;
+//char* user_input;
 Token* token;
 char* filename;
-
-
-char* read_file(char* path) {
-  // Open and read the file.
-  FILE* fp = fopen(path, "r");
-  if(!fp){
-    error("cannot open %s: %s", path, strerror(errno));
-  }
-
-  int filemax = 10 * 1024 * 1024;
-  char* buf = (char*)malloc(filemax);
-  int size = fread(buf, 1, filemax - 2, fp);
-  if(!feof(fp)){
-    error("%s: file too large");
-  }
-
-  // Make sure that the string ends with "\n\0".
-  if(size == 0 || buf[size - 1] != '\n'){
-    buf[size++] = '\n';
-  }
-  buf[size] = '\0';
-  return buf;
-} //read_file()
 
 int main(int argc, char **argv){
   if(argc != 2){
@@ -36,8 +13,8 @@ int main(int argc, char **argv){
   //tokenize
   //user_input = argv[1];
   filename = argv[1];
-  user_input = read_file(filename);
-  token = tokenize();
+  //user_input = read_file(filename);
+  token = tokenize_file(filename);
   Program* prog = program();
 
   gen_IR(prog);

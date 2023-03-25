@@ -13,6 +13,10 @@ static const std::string argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"
 static unsigned int labelseq = 1;
 static char* funcname;
 
+int roundup(const int x, const int align) {
+  return (x + align - 1) & ~(align - 1);
+}
+
 void print_cmp(const std::string inst, const IR* ir){
   //EQ,NE,LT,LEの命令を出力
   const int d = ir->d->rn;
@@ -347,8 +351,17 @@ void gen(const IR* ir){
     printf(".L.label.%s.%s:\n", funcname, ir->label);
     break;
   case IR_FUNCALL:
+    
+    for (int i = 0; i < ir->num_args; i++){
+      if(ir->args[i]->isImm){
+	printf("  mov %s, %d\n", argregs[i].c_str(), ir->args[i]->imm);
+      } else {
+	printf("  mov %s, %s\n", argregs[i].c_str(), regs[ir->args[i]->rn].c_str());
+      }
+    } //for
+
     /*
-    int seq = labelseq++;
+    const int seq = labelseq++;
     printf("  mov rax, rsp\n");
     printf("  and rax, 15\n"); //15(1111)とand演算
     //16は(0001 0000)なので、15とand演算すると、0になる
@@ -372,14 +385,6 @@ void gen(const IR* ir){
     printf("  mov %s, rax\n", regs[d].c_str());
     */
     
-    for (int i = 0; i < ir->num_args; i++){
-      if(ir->args[i]->isImm){
-	printf("  mov %s, %d\n", argregs[i].c_str(), ir->args[i]->imm);
-      } else {
-	printf("  mov %s, %s\n", argregs[i].c_str(), regs[ir->args[i]->rn].c_str());
-      }
-    } //for
-    
     printf("  push r10\n");
     printf("  push r11\n");
     printf("  mov rax, 0\n");
@@ -387,6 +392,7 @@ void gen(const IR* ir){
     printf("  pop r11\n");
     printf("  pop r10\n");
     printf("  mov %s, rax\n", regs[d].c_str());
+    
     break;
   } //switch 
 } //gen()
@@ -458,13 +464,15 @@ void emit_text(Program* prog){
     //プロローグ
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    printf("  sub rsp, %d\n", fn->stack_size);
+    //printf("  sub rsp, %d\n", fn->stack_size);
+    printf("  sub rsp, %d\n", roundup(fn->stack_size, 16)); //for 16-byte alignment
     printf("  push rbx\n");
     printf("  push r12\n");
     printf("  push r13\n");
     printf("  push r14\n");
     printf("  push r15\n");
-
+    printf("  sub rsp, 8\n"); //for 16-byte alignment
+    
     if(fn->has_varargs){
       const int n = fn->params.size();
 

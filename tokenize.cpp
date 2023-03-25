@@ -1,5 +1,6 @@
 #include "jcc.h"
 
+char* user_input = NULL;
 
 /*エラーを報告するための関数*/
 /*prnitfと同じ引数を取る*/
@@ -409,3 +410,64 @@ Token* tokenize(){
   new_token(TK_EOF, cur, p, 0);
   return head.next;
 }
+
+// Removes backslashes followed by a newline.
+static void remove_backslash_newline(char *p) {
+  int i = 0, j = 0;
+
+  // We want to keep the number of newline characters so that
+  // the logical line number matches the physical one.
+  // This counter maintain the number of newlines we have removed.
+  int n = 0;
+
+  while (p[i]) {
+    if (p[i] == '\\' && p[i + 1] == '\n') {
+      i += 2;
+      n++;
+    } else if (p[i] == '\n') {
+      p[j++] = p[i++];
+      for (; n > 0; n--)
+        p[j++] = '\n';
+    } else {
+      p[j++] = p[i++];
+    }
+  }
+
+  for (; n > 0; n--)
+    p[j++] = '\n';
+  p[j] = '\0';
+  
+} //remove_backslash_newline
+
+char* read_file(char* path) {
+  // Open and read the file.
+  FILE* fp = fopen(path, "r");
+  if(!fp){
+    error("cannot open %s: %s", path, strerror(errno));
+  }
+
+  int filemax = 10 * 1024 * 1024;
+  char* buf = (char*)malloc(filemax);
+  int size = fread(buf, 1, filemax - 2, fp);
+  if(!feof(fp)){
+    error("%s: file too large");
+  }
+
+  // Make sure that the string ends with "\n\0".
+  if(size == 0 || buf[size - 1] != '\n'){
+    buf[size++] = '\n';
+  }
+  buf[size] = '\0';
+  return buf;
+} //read_file()
+
+Token* tokenize_file(char* filename){
+
+  user_input = read_file(filename);
+  if(!user_input) return NULL;
+
+  remove_backslash_newline(user_input);
+  
+  return tokenize();
+  
+} //tokenize_file()

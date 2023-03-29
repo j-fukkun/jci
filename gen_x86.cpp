@@ -500,6 +500,7 @@ void emit_text(Program* prog){
 
     //エピローグ
     printf(".L.return.%s:\n", funcname);
+    printf("  add rsp, 8\n"); //for 16-byte alignment
     printf("  pop r15\n");
     printf("  pop r14\n");
     printf("  pop r13\n");

@@ -785,7 +785,7 @@ int main(){
 	 , "backslash_newline test" \
 	 );
   
-  printf("OK.\n");
+  printf("The tests are passed.\n");
   return 0;
 }
 

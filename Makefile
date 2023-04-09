@@ -15,6 +15,9 @@ test: jcc
 	./jcc test/test.c > test/test.s
 	gcc -g -static -o test/test.out test/test_extern.o test/test.s
 	./test/test.out
+	./jcc optimization/test/test.c > optimization/test/test.s
+	gcc -g -static -o optimization/test/test.out optimization/test/test.s
+	./optimization/test/test.out
 
 test_opt: jcc
 	./jcc test/test_opt.c > test/test_opt.s

@@ -276,13 +276,23 @@ static bool mem2reg_bb(BasicBlock* bb){
 } //mem2reg_bb()
 
 
-static IR* createMove(Reg* d, Reg* b, const int imm){
+static IR* createMoveImm(Reg* d, Reg* b, const int imm){
   IR* ir = new IR();
   ir->opcode = IR_MOV;
   ir->d = d;
   ir->b = b;
   ir->b->isImm = true;
   ir->b->imm = imm;
+  return ir;
+} //createMoveImm()
+
+static IR* createMove(Reg* d, Reg* b){
+  IR* ir = new IR();
+  ir->opcode = IR_MOV;
+  ir->d = d;
+  ir->b = b;
+  ir->b->isImm = b->isImm;
+  ir->b->imm = b->isImm ? b->imm : 0;
   return ir;
 } //createMove()
 
@@ -296,7 +306,7 @@ static bool peephole(BasicBlock* bb){
       //constant folding
       if(ir->opcode == IR_ADD){
 	const int c = ir->a->imm + ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -304,7 +314,7 @@ static bool peephole(BasicBlock* bb){
       } //ADD
       else if(ir->opcode == IR_SUB){
 	const int c = ir->a->imm - ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -312,7 +322,7 @@ static bool peephole(BasicBlock* bb){
       } //SUB
       else if(ir->opcode == IR_MUL){
 	const int c = ir->a->imm * ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -320,7 +330,7 @@ static bool peephole(BasicBlock* bb){
       } //MUL
       else if(ir->opcode == IR_DIV){
 	const int c = ir->a->imm / ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -328,7 +338,7 @@ static bool peephole(BasicBlock* bb){
       } //DIV
       else if(ir->opcode == IR_MOD){
 	const int c = ir->a->imm % ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -336,7 +346,7 @@ static bool peephole(BasicBlock* bb){
       } //MOD
       else if(ir->opcode == IR_EQ){
 	const int c = ir->a->imm == ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -344,7 +354,7 @@ static bool peephole(BasicBlock* bb){
       } //EQ
       else if(ir->opcode == IR_NE){
 	const int c = ir->a->imm != ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -352,7 +362,7 @@ static bool peephole(BasicBlock* bb){
       } //NE
       else if(ir->opcode == IR_LT){
 	const int c = ir->a->imm < ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -360,7 +370,7 @@ static bool peephole(BasicBlock* bb){
       } //LT
       else if(ir->opcode == IR_LE){
 	const int c = ir->a->imm <= ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -368,7 +378,7 @@ static bool peephole(BasicBlock* bb){
       } //LE
       else if(ir->opcode == IR_SHL){
 	const int c = ir->a->imm << ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -376,7 +386,7 @@ static bool peephole(BasicBlock* bb){
       } //SHL
       else if(ir->opcode == IR_SHR){
 	const int c = ir->a->imm >> ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -384,7 +394,7 @@ static bool peephole(BasicBlock* bb){
       } //SHR
       else if(ir->opcode == IR_BITOR){
 	const int c = ir->a->imm | ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -392,7 +402,7 @@ static bool peephole(BasicBlock* bb){
       } //BITOR
       else if(ir->opcode == IR_BITAND){
 	const int c = ir->a->imm & ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -400,7 +410,7 @@ static bool peephole(BasicBlock* bb){
       } //BITAND
       else if(ir->opcode == IR_BITXOR){
 	const int c = ir->a->imm ^ ir->b->imm;
-	IR* new_ir = createMove(ir->d, ir->b, c);	  
+	IR* new_ir = createMoveImm(ir->d, ir->b, c);	  
 	auto del_it = bb->instructions.erase(iter_inst);
 	auto new_it = bb->instructions.insert(del_it, new_ir);
 	iter_inst = new_it;
@@ -408,6 +418,78 @@ static bool peephole(BasicBlock* bb){
       } //BITXOR
     } //if isBinaryOp(ir->opcode) && ir->a->isImm && ir->b->isImm
 
+    //remove unnecessary computation
+    if(ir->opcode == IR_ADD){
+      IR* new_ir = nullptr;
+      if(ir->a->isImm && ir->a->imm == 0){
+	//d <= 0 + b is transformed to d <= b
+	new_ir = createMove(ir->d, ir->b);	
+      } else if(ir->b->isImm && ir->b->imm == 0){
+	//d <= a + 0 is transformed to d <= a
+	new_ir = createMove(ir->d, ir->a);	
+      }
+      if(new_ir){
+	auto del_it = bb->instructions.erase(iter_inst);
+	auto new_it = bb->instructions.insert(del_it, new_ir);
+	iter_inst = new_it;
+	changed = true;
+      }
+    } //if(ir->opcode == IR_ADD)
+    
+    //remove unnecessary computation
+    if(ir->opcode == IR_MUL){
+      IR* new_ir = nullptr;
+      if(ir->a->isImm && ir->a->imm == 1){
+	//d <= 1 * b is transformed to d <= b
+	new_ir = createMove(ir->d, ir->b);	
+      } else if(ir->b->isImm && ir->b->imm == 1){
+	//d <= a * 1 is transformed to d <= a
+	new_ir = createMove(ir->d, ir->a);	
+      }
+      if(new_ir){
+	auto del_it = bb->instructions.erase(iter_inst);
+	auto new_it = bb->instructions.insert(del_it, new_ir);
+	iter_inst = new_it;
+	changed = true;
+      }
+    } //if(ir->opcode == IR_MUL)
+
+    //remove unnecessary computation
+    if(ir->opcode == IR_SUB){      
+      if(ir->b->isImm && ir->b->imm == 0){
+	//d <= a - 0 is transformed to d <= a
+	IR* new_ir = createMove(ir->d, ir->a);
+	auto del_it = bb->instructions.erase(iter_inst);
+	auto new_it = bb->instructions.insert(del_it, new_ir);
+	iter_inst = new_it;
+	changed = true;
+      }      
+    } //if(ir->opcode == IR_DIV)
+    
+    //remove unnecessary computation
+    if(ir->opcode == IR_DIV){      
+      if(ir->b->isImm && ir->b->imm == 1){
+	//d <= a / 1 is transformed to d <= a
+	IR* new_ir = createMove(ir->d, ir->a);
+	auto del_it = bb->instructions.erase(iter_inst);
+	auto new_it = bb->instructions.insert(del_it, new_ir);
+	iter_inst = new_it;
+	changed = true;
+      }      
+    } //if(ir->opcode == IR_DIV)
+
+    //remove unnecessary computation
+    if(ir->opcode == IR_MOD){      
+      if(ir->b->isImm && ir->b->imm == 1){
+	//d <= a mod 1 is transformed to d <= 0
+	IR* new_ir = createMoveImm(ir->d, ir->a, 0);
+	auto del_it = bb->instructions.erase(iter_inst);
+	auto new_it = bb->instructions.insert(del_it, new_ir);
+	iter_inst = new_it;
+	changed = true;
+      }      
+    } //if(ir->opcode == IR_MOD)
+    
     if((ir->opcode == IR_JMP && !ir->bbarg) || ir->opcode == IR_JMP_LABEL){
       auto next = std::next(iter_inst, 1);
       if(next != bb->instructions.end()){
@@ -421,6 +503,7 @@ static bool peephole(BasicBlock* bb){
     } //if(ir->opcode == IR_JMP)
 
     if(ir->opcode == IR_BR && ir->b->isImm){
+      //conditional jmp --> unconditional jmp
       BasicBlock* bb = nullptr;
       if(ir->b->imm == 0){
 	bb = ir->bb2;

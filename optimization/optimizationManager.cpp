@@ -21,6 +21,27 @@ void optimize(Program* prog){
   simplifyCFGs(prog);
   
   printCFGs(prog);
+  /*
+  fn = prog->fns;
+  for(fn; fn; fn = fn->next){
+    printf("%s topoSort: ", fn->name);
+    fn->calcTopoSort();
+    for(auto iter = fn->topoOrder.begin(), end = fn->topoOrder.end();
+	iter != end; iter++){
+      printf("%d, ", (*iter)->label);
+    }
+    puts("\n");
     
+    printf("%s revTopoSort: ", fn->name);
+    fn->calcReverseTopoSort();
+    
+    for(auto iter = fn->reverseTopoOrder.begin(), end = fn->reverseTopoOrder.end();
+	iter != end; iter++){
+      printf("%d, ", (*iter)->label);
+    }
+    puts("\n");
+  }
+  */
+  
   return;
 } //optimize()

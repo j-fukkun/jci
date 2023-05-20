@@ -1,4 +1,61 @@
 #include "optimization.h"
+#include <climits>
+
+void Function::depthFirstSearch_rev(BasicBlock* bb,
+				    std::list<BasicBlock*>& order,
+				    std::unordered_set<int>& mark
+				    ){
+  if(mark.find(bb->label) == mark.end()){
+    mark.insert(bb->label);
+    for(auto it_pred = bb->pred.begin(), end_pred = bb->pred.end();
+	it_pred != end_pred; it_pred++){
+      BasicBlock* pred = *it_pred;
+      depthFirstSearch_rev(pred, order, mark);
+    } //for
+
+    order.push_front(bb);
+  } //if
+} //depthFirstSearch_rev()
+
+void Function::calcReverseTopoSort(){
+  //This function reverse-topologically sorts basic blocks on an acyclic graph
+  //or quasi-reverse-topologically sorts basic blocks on a cyclic graph
+  this->reverseTopoOrder.clear();
+  std::unordered_set<int> mark = {};
+  
+  depthFirstSearch_rev(this->end_node,
+		       this->reverseTopoOrder,
+		       mark
+		       );  
+  return;  
+} //calcReverseTopoSort()
+
+void Function::depthFirstSearch(BasicBlock* bb,
+				std::list<BasicBlock*>& order,
+				std::unordered_set<int>& mark
+				){
+  if(mark.find(bb->label) == mark.end()){
+    mark.insert(bb->label);    
+    for(auto it_succ = bb->succ.begin(), end_succ = bb->succ.end();
+	it_succ != end_succ; it_succ++){
+      BasicBlock* succ = *it_succ; 
+      depthFirstSearch(succ, order, mark);
+    } //for
+    
+    order.push_front(bb);
+  } //if
+} //depthFirstSearch()
+
+void Function::calcTopoSort(){
+  //This function topologically sorts basic blocks on an acyclic graph
+  //or quasi-topologically sorts basic blocks on a cyclic graph
+  //const int cfg_size = this->bbs.size() + 2;
+  this->topoOrder.clear();
+  std::unordered_set<int> mark = {};
+  
+  depthFirstSearch(this->start_node, this->topoOrder, mark);  
+  return;  
+} //calcTopoSort()
 
 static void add_edges(BasicBlock* bb){
   
@@ -42,7 +99,7 @@ static void constructCFG(Function* fn){
   s->isEndNode = false;
 
   BasicBlock* e = new BasicBlock();
-  e->label = 0;
+  e->label = INT_MAX;
   e->isStartNode = false;
   e->isEndNode = true;
 
@@ -73,6 +130,8 @@ void constructCFGs(Program* prog){
   Function* fn = prog->fns;
   for(fn; fn; fn = fn->next){
     constructCFG(fn);
+    //calcTopoSort(fn);
+    //calcReverseTopoSort(fn);
   }
   return;
 } //constructCFGs()
@@ -408,15 +467,34 @@ static bool simplifyCFG(Function* fn){
 	}
 	bb->instructions.erase(it_last);
 
-	//copy bb's instructions into s
+	//copy s's instructions into bb
 	for(auto s_inst = s->instructions.begin(); s_inst != s->instructions.end(); ++s_inst){
-	  IR* i = *s_inst;	  
+	  IR* i = *s_inst;  
 	  bb->instructions.insert(bb->instructions.end(), i);	  
 	} //for s_inst
 
-	//change edges	
+	//change edges
+	//add bb --> s'succ edges
 	std::copy(s->succ.begin(), s->succ.end(), std::back_inserter(bb->succ));
+	//delete s --> s'succ edges
+	for(auto it_ss = s->succ.begin(), end_ss = s->succ.end();
+	    it_ss != end_ss; it_ss++){
+	  BasicBlock* ss = *it_ss;
+	  for(auto it_ss_pred = ss->pred.begin(), end_ss_pred = ss->pred.end();
+	      it_ss_pred != end_ss_pred; it_ss_pred++){
+	    BasicBlock* ss_pred = *it_ss_pred;
+	    if(ss_pred->label == s->label){
+	      it_ss_pred = ss->pred.erase(it_ss_pred);
+	      it_ss_pred = std::prev(it_ss_pred);
+	    } //if
+	  } //for it_ss_pred
+
+	  //add bb --> s'succ edges
+	  ss->pred.push_back(bb);
+	} //for it_ss
+	
 	bb->succ.remove(s);
+	//bb->succ.erase(bb->succ.begin());
 	fn->bbs.remove(s);
 	//iter_bbs = fn->bbs.erase(iter_bbs);
 	//--iter_bbs;

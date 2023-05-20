@@ -910,6 +910,7 @@ Function* function(){
   new_gvar(name, func_type(type), false, nullptr, false, false);
   
   Function* fn = new Function();
+  //fn->topoOrder = {};
   //fn->name = strndup(tok->str, tok->len);
   fn->name = name;
   fn->is_static = (sclass == STATIC);

@@ -233,6 +233,27 @@ class Function{
   //the unique node of CFG
   BasicBlock* start_node;
   BasicBlock* end_node;
+
+  std::list<BasicBlock*> topoOrder;
+  std::list<BasicBlock*> reverseTopoOrder;
+  
+  Function(){
+    topoOrder = {};
+    reverseTopoOrder = {};
+  } //Function()
+
+  void calcTopoSort();
+  void calcReverseTopoSort();
+
+private:
+  void depthFirstSearch(BasicBlock*,
+			std::list<BasicBlock*>&,
+			std::unordered_set<int>&
+			);
+  void depthFirstSearch_rev(BasicBlock* bb,
+			    std::list<BasicBlock*>& order,
+			    std::unordered_set<int>& mark
+			    );
 };
 
 struct Program{
@@ -413,6 +434,11 @@ class BasicBlock{
 
   bool isStartNode;
   bool isEndNode;
+
+  BasicBlock(){
+    succ = {};
+    pred = {};
+  } //BasicBlock()
 };
 
 class IR{
